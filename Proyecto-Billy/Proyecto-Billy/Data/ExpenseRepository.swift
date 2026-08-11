@@ -4,6 +4,7 @@ import UIKit
 @MainActor
 final class ExpenseRepository {
     static let shared = ExpenseRepository()
+    static let didChange = Notification.Name("ExpenseRepository.didChange")
 
     var viewContext: NSManagedObjectContext {
         guard let delegate = UIApplication.shared.delegate as? AppDelegate else {
@@ -23,6 +24,12 @@ final class ExpenseRepository {
             sectionNameKeyPath: nil,
             cacheName: nil
         )
+    }
+
+    func fetchAll() throws -> [Expense] {
+        let request = Expense.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: #keyPath(Expense.date), ascending: false)]
+        return try viewContext.fetch(request)
     }
 
     @discardableResult
@@ -55,5 +62,6 @@ final class ExpenseRepository {
     private func save() throws {
         guard viewContext.hasChanges else { return }
         try viewContext.save()
+        NotificationCenter.default.post(name: Self.didChange, object: nil)
     }
 }

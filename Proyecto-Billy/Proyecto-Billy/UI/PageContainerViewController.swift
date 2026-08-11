@@ -4,7 +4,10 @@ final class PageContainerViewController: UIViewController {
     private let descriptors = PageDescriptor.mainPages
     private lazy var pages: [UINavigationController] = descriptors.enumerated().map { index, descriptor in
         let content: UIViewController
-        if index == 1 {
+        if index == 0 {
+            content = DashboardViewController()
+            content.title = descriptor.title
+        } else if index == 1 {
             content = ExpenseListViewController()
             content.title = descriptor.title
         } else {
