@@ -1,5 +1,15 @@
 import UIKit
 
+fileprivate struct ProfileGroup: Hashable {
+    let title: String
+    let iconName: String
+
+    static let complete = ProfileGroup(title: "Completos", iconName: "checkmark.seal.fill")
+    static let missingContact = ProfileGroup(title: "Sin contacto", iconName: "phone.down.fill")
+    static let missingAddress = ProfileGroup(title: "Sin dirección", iconName: "house.fill")
+    static let missingEmergency = ProfileGroup(title: "Sin emergencia", iconName: "cross.case.fill")
+}
+
 final class DashboardViewController: UIViewController {
     fileprivate struct Metric {
         let title: String
@@ -14,7 +24,16 @@ final class DashboardViewController: UIViewController {
     }
 
     private var metrics: [Metric] = []
-    private var categoryTotals: [(category: ExpenseCategory, total: Double)] = []
+    private var profileGroups: [(group: ProfileGroup, count: Int)] = []
+    private var reloadTask: Task<Void, Never>?
+
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.accessibilityLabel = "Calculando resumen de perfiles"
+        return indicator
+    }()
 
     private lazy var collectionView: UICollectionView = {
         let view = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
@@ -33,16 +52,19 @@ final class DashboardViewController: UIViewController {
         view.backgroundColor = AppStyle.background
         navigationItem.largeTitleDisplayMode = .always
         view.addSubview(collectionView)
+        view.addSubview(loadingIndicator)
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(expensesDidChange),
-            name: ExpenseRepository.didChange,
+            selector: #selector(profilesDidChange),
+            name: PersonalProfileRepository.didChange,
             object: nil
         )
         reloadDashboard()
@@ -54,44 +76,54 @@ final class DashboardViewController: UIViewController {
     }
 
     deinit {
+        reloadTask?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
 
-    @objc private func expensesDidChange() {
+    @objc private func profilesDidChange() {
         reloadDashboard()
     }
 
     private func reloadDashboard() {
-        do {
-            let expenses = try ExpenseRepository.shared.fetchAll()
-            let total = expenses.reduce(0) { $0 + $1.amount }
-            let monthlyExpenses = expenses.filter {
-                Calendar.current.isDate($0.date ?? .distantPast, equalTo: Date(), toGranularity: .month)
+        reloadTask?.cancel()
+        loadingIndicator.startAnimating()
+        reloadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let snapshots = try PersonalProfileRepository.shared.fetchAll().map(\.snapshot)
+                let insights = try await ProfileInsightsService.shared.analyze(snapshots)
+                try Task.checkCancellation()
+                apply(insights)
+            } catch is CancellationError {
+                return
+            } catch {
+                loadingIndicator.stopAnimating()
+                showError(error, title: "No se pudo actualizar el resumen")
             }
-            let monthlyTotal = monthlyExpenses.reduce(0) { $0 + $1.amount }
-
-            let grouped = Dictionary(grouping: expenses) {
-                ExpenseCategory(rawValue: $0.safeCategory) ?? .other
-            }
-            categoryTotals = grouped.map { category, values in
-                (category, values.reduce(0) { $0 + $1.amount })
-            }.sorted { $0.total > $1.total }
-
-            let topCategory = categoryTotals.first?.category.rawValue ?? "Sin datos"
-            metrics = [
-                Metric(title: "Gasto total", value: currency(total), iconName: "wallet.bifold.fill", color: AppStyle.accent),
-                Metric(title: "Este mes", value: currency(monthlyTotal), iconName: "calendar", color: .systemGreen),
-                Metric(title: "Movimientos", value: "\(expenses.count)", iconName: "list.number", color: .systemOrange),
-                Metric(title: "Categoría principal", value: topCategory, iconName: "tag.fill", color: .systemPurple)
-            ]
-            collectionView.reloadData()
-        } catch {
-            showError(error, title: "No se pudo actualizar el resumen")
         }
     }
 
-    private func currency(_ value: Double) -> String {
-        NumberFormatter.penCurrency.string(from: value as NSNumber) ?? String(format: "S/ %.2f", value)
+    private func apply(_ insights: ProfileInsights) {
+        profileGroups = insights.statusCounts.map { status, count in
+            (profileGroup(for: status), count)
+        }.sorted { $0.count > $1.count }
+        metrics = [
+            Metric(title: "Total de perfiles", value: "\(insights.total)", iconName: "person.2.fill", color: AppStyle.accent),
+            Metric(title: "Perfiles completos", value: "\(insights.complete)", iconName: "checkmark.seal.fill", color: .systemGreen),
+            Metric(title: "Actualizados 7 días", value: "\(insights.recentlyUpdated)", iconName: "clock.arrow.circlepath", color: .systemOrange),
+            Metric(title: "Con emergencia", value: "\(insights.withEmergencyContact)", iconName: "cross.case.fill", color: .systemPurple)
+        ]
+        loadingIndicator.stopAnimating()
+        collectionView.reloadData()
+    }
+
+    private func profileGroup(for status: ProfileStatus) -> ProfileGroup {
+        switch status {
+        case .complete: .complete
+        case .missingContact: .missingContact
+        case .missingAddress: .missingAddress
+        case .missingEmergency: .missingEmergency
+        }
     }
 
     private func makeLayout() -> UICollectionViewLayout {
@@ -161,7 +193,7 @@ extension DashboardViewController: UICollectionViewDataSource {
                 withReuseIdentifier: DynamicsCollectionViewCell.reuseIdentifier,
                 for: indexPath
             ) as! DynamicsCollectionViewCell
-            cell.configure(with: categoryTotals)
+            cell.configure(with: profileGroups)
             return cell
         case nil:
             preconditionFailure("Sección de dashboard no válida")
@@ -233,7 +265,7 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
     private let arena = UIView()
     private var animator: UIDynamicAnimator?
     private var bubbles: [UIView] = []
-    private var totals: [(category: ExpenseCategory, total: Double)] = []
+    private var groups: [(group: ProfileGroup, count: Int)] = []
     private var needsDynamicsBuild = false
 
     override init(frame: CGRect) {
@@ -241,11 +273,11 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         contentView.backgroundColor = AppStyle.cardBackground
         contentView.layer.cornerRadius = 20
 
-        titleLabel.text = "Gastos en movimiento"
+        titleLabel.text = "Estado de los perfiles"
         titleLabel.font = .preferredFont(forTextStyle: .title3)
         titleLabel.adjustsFontForContentSizeCategory = true
 
-        subtitleLabel.text = "Las categorías caen, chocan y rebotan usando UIKit Dynamics."
+        subtitleLabel.text = "Los estados caen, chocan y rebotan usando UIKit Dynamics."
         subtitleLabel.font = .preferredFont(forTextStyle: .footnote)
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.numberOfLines = 0
@@ -254,7 +286,7 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         resetButton.configuration?.title = "Reiniciar"
         resetButton.configuration?.image = UIImage(systemName: "arrow.clockwise")
         resetButton.addAction(UIAction { [weak self] _ in self?.restartDynamics() }, for: .touchUpInside)
-        resetButton.accessibilityHint = "Vuelve a soltar las categorías dentro del área"
+        resetButton.accessibilityHint = "Vuelve a soltar los estados de los perfiles dentro del área"
 
         arena.backgroundColor = AppStyle.background
         arena.layer.cornerRadius = 14
@@ -295,10 +327,10 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         buildDynamics()
     }
 
-    func configure(with categoryTotals: [(category: ExpenseCategory, total: Double)]) {
-        totals = categoryTotals.isEmpty
-            ? [(.food, 0), (.transport, 0), (.other, 0)]
-            : Array(categoryTotals.prefix(6))
+    func configure(with profileGroups: [(group: ProfileGroup, count: Int)]) {
+        groups = profileGroups.isEmpty
+            ? [(.complete, 0), (.missingContact, 0), (.missingEmergency, 0)]
+            : Array(profileGroups.prefix(6))
         needsDynamicsBuild = true
         setNeedsLayout()
     }
@@ -314,19 +346,19 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         bubbles.forEach { $0.removeFromSuperview() }
         bubbles.removeAll()
 
-        let maximum = totals.map(\.total).max() ?? 0
+        let maximum = groups.map(\.count).max() ?? 0
         let palette: [UIColor] = [.systemBlue, .systemGreen, .systemOrange, .systemPurple, .systemPink, .systemTeal]
-        let columns = min(3, max(1, totals.count))
+        let columns = min(3, max(1, groups.count))
         let slotWidth = arena.bounds.width / CGFloat(columns)
 
-        for (index, item) in totals.enumerated() {
-            let ratio = maximum > 0 ? item.total / maximum : 0.35
+        for (index, item) in groups.enumerated() {
+            let ratio = maximum > 0 ? Double(item.count) / Double(maximum) : 0.35
             let diameter = 54 + CGFloat(ratio) * 24
             let column = index % columns
             let row = index / columns
             let x = CGFloat(column) * slotWidth + (slotWidth - diameter) / 2
             let y = 6 + CGFloat(row) * 10
-            let bubble = makeBubble(category: item.category, total: item.total, color: palette[index % palette.count])
+            let bubble = makeBubble(group: item.group, count: item.count, color: palette[index % palette.count])
             bubble.frame = CGRect(x: x, y: y, width: diameter, height: diameter)
             bubble.layer.cornerRadius = diameter / 2
             arena.addSubview(bubble)
@@ -357,18 +389,18 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         self.animator = animator
     }
 
-    private func makeBubble(category: ExpenseCategory, total: Double, color: UIColor) -> UIView {
+    private func makeBubble(group: ProfileGroup, count: Int, color: UIColor) -> UIView {
         let bubble = UIView()
         bubble.backgroundColor = color.withAlphaComponent(0.88)
         bubble.layer.borderWidth = 2
         bubble.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
 
-        let icon = UIImageView(image: UIImage(systemName: category.iconName))
+        let icon = UIImageView(image: UIImage(systemName: group.iconName))
         icon.tintColor = .white
         icon.contentMode = .scaleAspectFit
 
         let label = UILabel()
-        label.text = total > 0 ? "\(category.rawValue)\n\(compactCurrency(total))" : category.rawValue
+        label.text = "\(group.title)\n\(count)"
         label.textColor = .white
         label.font = .systemFont(ofSize: 9, weight: .semibold)
         label.textAlignment = .center
@@ -389,16 +421,7 @@ private final class DynamicsCollectionViewCell: UICollectionViewCell {
         ])
 
         bubble.isAccessibilityElement = true
-        bubble.accessibilityLabel = total > 0
-            ? "\(category.rawValue), \(NumberFormatter.penCurrency.string(from: total as NSNumber) ?? "")"
-            : category.rawValue
+        bubble.accessibilityLabel = "\(group.title), \(count) perfiles"
         return bubble
-    }
-
-    private func compactCurrency(_ value: Double) -> String {
-        if value >= 1_000 {
-            return String(format: "S/ %.1fk", value / 1_000)
-        }
-        return String(format: "S/ %.0f", value)
     }
 }

@@ -11,25 +11,25 @@ struct PageDescriptor {
             title: "Resumen",
             shortTitle: "Resumen",
             iconName: "chart.pie.fill",
-            message: "Aquí visualizarás el total mensual, las categorías principales y las métricas de tus gastos."
+            message: "Aquí visualizarás métricas y el estado general de tus perfiles personales."
         ),
         PageDescriptor(
-            title: "Gastos",
-            shortTitle: "Gastos",
-            iconName: "list.bullet.rectangle.fill",
-            message: "Desde esta sección podrás registrar, consultar y eliminar tus movimientos guardados en Core Data."
+            title: "Perfiles",
+            shortTitle: "Perfiles",
+            iconName: "person.text.rectangle.fill",
+            message: "Desde esta sección podrás registrar, consultar, editar y eliminar perfiles personales guardados en Core Data."
         ),
         PageDescriptor(
             title: "Servicios",
             shortTitle: "Servicios",
             iconName: "cloud.fill",
-            message: "Aquí se integrarán el tipo de cambio mediante REST y el respaldo en Firebase Realtime Database."
+            message: "Aquí se integrarán servicios REST y el respaldo seguro de perfiles mediante Firebase."
         ),
         PageDescriptor(
-            title: "Herramientas",
-            shortTitle: "Extras",
-            iconName: "wrench.and.screwdriver.fill",
-            message: "Esta página reunirá autenticación local, notificaciones y exportación de movimientos."
+            title: "Cuenta",
+            shortTitle: "Cuenta",
+            iconName: "person.badge.key.fill",
+            message: "Administra el acceso y protege el respaldo de tus perfiles."
         )
     ]
 }

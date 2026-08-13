@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreData
+import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,6 +15,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+            FirebaseApp.configure()
+        }
         persistentContainer.viewContext.automaticallyMergesChangesFromParent = true
         persistentContainer.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         return true
@@ -37,6 +41,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     lazy var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "Proyecto_Billy")
+        container.persistentStoreDescriptions.forEach { description in
+            description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+            description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+        }
         container.loadPersistentStores { _, error in
             if let error {
                 fatalError("No se pudo cargar Core Data: \(error.localizedDescription)")

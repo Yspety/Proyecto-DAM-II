@@ -8,10 +8,14 @@ final class PageContainerViewController: UIViewController {
             content = DashboardViewController()
             content.title = descriptor.title
         } else if index == 1 {
-            content = ExpenseListViewController()
+            content = PersonalProfileListViewController()
+            content.title = descriptor.title
+        } else if index == 2 {
+            content = FirebaseSyncViewController()
             content.title = descriptor.title
         } else {
-            content = PlaceholderPageViewController(descriptor: descriptor, pageIndex: index)
+            content = AccountViewController()
+            content.title = descriptor.title
         }
         let navigation = UINavigationController(rootViewController: content)
         navigation.navigationBar.prefersLargeTitles = true
