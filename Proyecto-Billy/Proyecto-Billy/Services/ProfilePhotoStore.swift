@@ -16,13 +16,30 @@ final class ProfilePhotoStore {
         guard let data = image.resized(maxDimension: 1_200).jpegData(compressionQuality: 0.82) else {
             throw CocoaError(.fileWriteUnknown)
         }
-        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-        try data.write(to: fileURL(for: profileID), options: .atomic)
+        try prepareDirectory()
+        try data.write(to: fileURL(for: profileID), options: [.atomic, .completeFileProtection])
     }
 
     func delete(for profileID: UUID?) {
         guard let profileID else { return }
         try? fileManager.removeItem(at: fileURL(for: profileID))
+    }
+
+    func deleteAll() throws {
+        guard fileManager.fileExists(atPath: directoryURL.path) else { return }
+        try fileManager.removeItem(at: directoryURL)
+    }
+
+    private func prepareDirectory() throws {
+        try fileManager.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true,
+            attributes: [.protectionKey: FileProtectionType.complete]
+        )
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var directory = directoryURL
+        try directory.setResourceValues(values)
     }
 
     private var directoryURL: URL {

@@ -60,7 +60,7 @@ final class PageContainerViewController: UIViewController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(requireAuthentication),
-            name: UIApplication.didEnterBackgroundNotification,
+            name: UIApplication.willResignActiveNotification,
             object: nil
         )
     }

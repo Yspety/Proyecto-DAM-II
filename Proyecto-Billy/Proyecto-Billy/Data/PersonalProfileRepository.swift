@@ -94,6 +94,12 @@ final class PersonalProfileRepository {
         try save()
     }
 
+    func deleteAll() throws {
+        let profiles = try fetchAll()
+        profiles.forEach { viewContext.delete($0) }
+        try save()
+    }
+
     private func apply(_ input: PersonalProfileInput, to profile: PersonalProfile) {
         profile.firstName = input.firstName.trimmed
         profile.lastName = input.lastName.trimmed

@@ -2,7 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/profiles/{profileId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      function ownsProfile() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function hasAllowedFields() {
+        return request.resource.data.keys().hasOnly([
+          'firstName', 'lastName', 'documentNumber', 'phone', 'email',
+          'birthDate', 'address', 'emergencyContact', 'notes',
+          'countryCode', 'countryName', 'createdAt', 'updatedAt'
+        ]) && request.resource.data.updatedAt is timestamp;
+      }
+
+      allow read, delete: if ownsProfile();
+      allow create, update: if ownsProfile() && hasAllowedFields();
     }
   }
 }

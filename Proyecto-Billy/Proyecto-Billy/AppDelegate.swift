@@ -44,6 +44,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         container.persistentStoreDescriptions.forEach { description in
             description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
             description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+            description.setOption(
+                FileProtectionType.complete.rawValue as NSString,
+                forKey: NSPersistentStoreFileProtectionKey
+            )
         }
         container.loadPersistentStores { _, error in
             if let error {

@@ -9,6 +9,7 @@ final class AccountViewController: UIViewController {
     private let signInButton = UIButton(type: .system)
     private let signOutButton = UIButton(type: .system)
     private let deleteButton = UIButton(type: .system)
+    private let deleteLocalButton = UIButton(type: .system)
     private let indicator = UIActivityIndicatorView(style: .medium)
     private var accountTask: Task<Void, Never>?
 
@@ -51,11 +52,15 @@ final class AccountViewController: UIViewController {
             self?.confirmAccountDeletion()
         }
         deleteButton.configuration?.baseForegroundColor = .systemRed
+        configure(deleteLocalButton, title: "Eliminar datos de este dispositivo", image: "iphone.slash") { [weak self] in
+            self?.confirmLocalDeletion()
+        }
+        deleteLocalButton.configuration?.baseForegroundColor = .systemOrange
         indicator.hidesWhenStopped = true
 
         let stack = UIStackView(arrangedSubviews: [
             icon, statusLabel, emailField, passwordField,
-            registerButton, signInButton, signOutButton, deleteButton, indicator
+            registerButton, signInButton, signOutButton, deleteButton, deleteLocalButton, indicator
         ])
         stack.axis = .vertical
         stack.spacing = 14
@@ -128,6 +133,29 @@ final class AccountViewController: UIViewController {
             self?.deleteAccount()
         })
         present(alert, animated: true)
+    }
+
+    private func confirmLocalDeletion() {
+        let alert = UIAlertController(
+            title: "¿Eliminar datos locales?",
+            message: "Se borrarán definitivamente todos los perfiles y fotografías guardados en este dispositivo. La cuenta y el respaldo de Firebase no serán eliminados.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Eliminar del dispositivo", style: .destructive) { [weak self] _ in
+            self?.deleteLocalData()
+        })
+        present(alert, animated: true)
+    }
+
+    private func deleteLocalData() {
+        do {
+            try ProfilePhotoStore.shared.deleteAll()
+            try PersonalProfileRepository.shared.deleteAll()
+            showMessage("Los perfiles y fotografías locales fueron eliminados. El respaldo remoto permanece disponible.")
+        } catch {
+            showMessage("No se pudieron eliminar todos los datos locales: \(error.localizedDescription)")
+        }
     }
 
     private func deleteAccount() {
@@ -207,7 +235,7 @@ final class AccountViewController: UIViewController {
 
     private func setLoading(_ loading: Bool) {
         loading ? indicator.startAnimating() : indicator.stopAnimating()
-        [registerButton, signInButton, signOutButton, deleteButton].forEach { $0.isEnabled = !loading }
+        [registerButton, signInButton, signOutButton, deleteButton, deleteLocalButton].forEach { $0.isEnabled = !loading }
     }
 
     private func readableMessage(for error: Error) -> String {
