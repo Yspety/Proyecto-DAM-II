@@ -136,7 +136,9 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: " · ")
-        content.image = UIImage(systemName: "person.crop.circle.fill")
+        content.image = ProfilePhotoStore.shared.image(for: profile.id) ?? UIImage(systemName: "person.crop.circle.fill")
+        content.imageProperties.maximumSize = CGSize(width: 44, height: 44)
+        content.imageProperties.cornerRadius = 22
         content.imageProperties.tintColor = AppStyle.accent
         cell.contentConfiguration = content
         cell.accessoryType = .disclosureIndicator
@@ -155,7 +157,9 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
         let action = UIContextualAction(style: .destructive, title: "Eliminar") { [weak self] _, _, completion in
             guard let self else { return completion(false) }
             do {
-                try PersonalProfileRepository.shared.delete(resultsController.object(at: indexPath))
+                let profile = resultsController.object(at: indexPath)
+                ProfilePhotoStore.shared.delete(for: profile.id)
+                try PersonalProfileRepository.shared.delete(profile)
                 completion(true)
             } catch {
                 showError(error, title: "No se pudo eliminar")
@@ -163,6 +167,25 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
             }
         }
         action.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [action])
+    }
+
+    override func tableView(
+        _ tableView: UITableView,
+        leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
+        let action = UIContextualAction(style: .normal, title: "Compartir") { [weak self] _, sourceView, completion in
+            guard let self else { return completion(false) }
+            let profile = resultsController.object(at: indexPath)
+            var items: [Any] = [profile.shareText]
+            if let photo = ProfilePhotoStore.shared.image(for: profile.id) { items.append(photo) }
+            let activity = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            activity.popoverPresentationController?.sourceView = sourceView
+            present(activity, animated: true)
+            completion(true)
+        }
+        action.backgroundColor = AppStyle.accent
+        action.image = UIImage(systemName: "square.and.arrow.up")
         return UISwipeActionsConfiguration(actions: [action])
     }
 }

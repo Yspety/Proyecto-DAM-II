@@ -187,6 +187,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Proyecto-Billy/Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Billy usa la cámara para agregar una fotografía al perfil personal.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Billy usa Face ID para proteger el acceso a los datos personales.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Billy accede a tus fotos para seleccionar la imagen de un perfil personal.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -221,6 +224,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Proyecto-Billy/Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Billy usa la cámara para agregar una fotografía al perfil personal.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Billy usa Face ID para proteger el acceso a los datos personales.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Billy accede a tus fotos para seleccionar la imagen de un perfil personal.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

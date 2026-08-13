@@ -1,6 +1,10 @@
 import UIKit
 
 final class PageContainerViewController: UIViewController {
+    private let privacyOverlay = UIView()
+    private let unlockButton = UIButton(type: .system)
+    private var unlockTask: Task<Void, Never>?
+    private var requiresUnlock = true
     private let descriptors = PageDescriptor.mainPages
     private lazy var pages: [UINavigationController] = descriptors.enumerated().map { index, descriptor in
         let content: UIViewController
@@ -52,6 +56,89 @@ final class PageContainerViewController: UIViewController {
         view.backgroundColor = .systemBackground
         configurePageController()
         configureLayout()
+        configurePrivacyOverlay()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(requireAuthentication),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if requiresUnlock { authenticate() }
+    }
+
+    deinit { unlockTask?.cancel() }
+
+    private func configurePrivacyOverlay() {
+        privacyOverlay.backgroundColor = AppStyle.background
+        privacyOverlay.translatesAutoresizingMaskIntoConstraints = false
+        let icon = UIImageView(image: UIImage(systemName: "lock.shield.fill"))
+        icon.tintColor = AppStyle.accent
+        icon.contentMode = .scaleAspectFit
+        icon.heightAnchor.constraint(equalToConstant: 76).isActive = true
+        let title = UILabel()
+        title.text = "Datos personales protegidos"
+        title.font = .preferredFont(forTextStyle: .title2)
+        title.textAlignment = .center
+        unlockButton.configuration = .filled()
+        unlockButton.configuration?.title = "Desbloquear con \(BiometricAuthService.shared.biometricName())"
+        unlockButton.configuration?.image = UIImage(systemName: "faceid")
+        unlockButton.configuration?.imagePadding = 8
+        unlockButton.addAction(UIAction { [weak self] _ in self?.authenticate() }, for: .touchUpInside)
+        let stack = UIStackView(arrangedSubviews: [icon, title, unlockButton])
+        stack.axis = .vertical
+        stack.spacing = 20
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        privacyOverlay.addSubview(stack)
+        view.addSubview(privacyOverlay)
+        NSLayoutConstraint.activate([
+            privacyOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            privacyOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            privacyOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            privacyOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            stack.centerYAnchor.constraint(equalTo: privacyOverlay.centerYAnchor),
+            stack.leadingAnchor.constraint(equalTo: privacyOverlay.layoutMarginsGuide.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: privacyOverlay.layoutMarginsGuide.trailingAnchor, constant: -20)
+        ])
+    }
+
+    @objc private func requireAuthentication() {
+        requiresUnlock = true
+        privacyOverlay.isHidden = false
+        view.bringSubviewToFront(privacyOverlay)
+    }
+
+    private func authenticate() {
+        unlockTask?.cancel()
+        unlockButton.isEnabled = false
+        unlockTask = Task { [weak self] in
+            guard let self else { return }
+            let result = await BiometricAuthService.shared.authenticate(
+                reason: "Desbloquea el acceso a tus perfiles personales."
+            )
+            unlockButton.isEnabled = true
+            switch result {
+            case .authenticated:
+                requiresUnlock = false
+                privacyOverlay.isHidden = true
+            case .unavailable(let message):
+                requiresUnlock = false
+                privacyOverlay.isHidden = true
+                showBiometricMessage(message)
+            case .failed(let message):
+                showBiometricMessage(message)
+            }
+        }
+    }
+
+    private func showBiometricMessage(_ message: String) {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: "Protección biométrica", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Aceptar", style: .default))
+        present(alert, animated: true)
     }
 
     private func configurePageController() {

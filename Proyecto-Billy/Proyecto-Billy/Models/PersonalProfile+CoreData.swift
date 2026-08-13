@@ -42,4 +42,21 @@ extension PersonalProfile {
             updatedAt: updatedAt
         )
     }
+
+    var shareText: String {
+        let values: [(String, String?)] = [
+            ("Nombre", fullName),
+            ("Documento", documentNumber),
+            ("Teléfono", phone),
+            ("Correo", email),
+            ("País", countryName),
+            ("Dirección", address),
+            ("Contacto de emergencia", emergencyContact),
+            ("Notas", notes)
+        ]
+        return values.compactMap { label, value in
+            guard let value, !value.isEmpty else { return nil }
+            return "\(label): \(value)"
+        }.joined(separator: "\n")
+    }
 }

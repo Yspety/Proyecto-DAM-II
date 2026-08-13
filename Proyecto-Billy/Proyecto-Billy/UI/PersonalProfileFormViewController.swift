@@ -12,7 +12,10 @@ final class PersonalProfileFormViewController: UIViewController {
     private let countryButton = UIButton(type: .system)
     private let birthDatePicker = UIDatePicker()
     private let notesView = UITextView()
+    private let photoView = UIImageView()
+    private let photoButton = UIButton(type: .system)
     private var selectedCountry: Country?
+    private var selectedPhoto: UIImage?
 
     init(profile: PersonalProfile? = nil) {
         self.profile = profile
@@ -36,6 +39,22 @@ final class PersonalProfileFormViewController: UIViewController {
     }
 
     private func configureControls() {
+        photoView.image = UIImage(systemName: "person.crop.circle.fill")
+        photoView.tintColor = AppStyle.accent
+        photoView.contentMode = .scaleAspectFill
+        photoView.clipsToBounds = true
+        photoView.layer.cornerRadius = 55
+        photoView.layer.borderWidth = 2
+        photoView.layer.borderColor = AppStyle.accent.cgColor
+        NSLayoutConstraint.activate([
+            photoView.widthAnchor.constraint(equalToConstant: 110),
+            photoView.heightAnchor.constraint(equalToConstant: 110)
+        ])
+        photoButton.configuration = .bordered()
+        photoButton.configuration?.title = "Agregar fotografía"
+        photoButton.configuration?.image = UIImage(systemName: "camera.fill")
+        photoButton.menu = makePhotoMenu()
+        photoButton.showsMenuAsPrimaryAction = true
         configure(firstNameField, placeholder: "Nombres", contentType: .givenName)
         configure(lastNameField, placeholder: "Apellidos", contentType: .familyName)
         configure(documentField, placeholder: "DNI o documento", keyboard: .numberPad)
@@ -78,6 +97,7 @@ final class PersonalProfileFormViewController: UIViewController {
 
     private func configureLayout() {
         let fields: [(String, UIView)] = [
+            ("Fotografía", makePhotoControl()),
             ("Nombres *", firstNameField), ("Apellidos *", lastNameField),
             ("Documento *", documentField), ("Teléfono", phoneField),
             ("Correo", emailField), ("Fecha de nacimiento", birthDatePicker),
@@ -106,6 +126,26 @@ final class PersonalProfileFormViewController: UIViewController {
         ])
     }
 
+    private func makePhotoControl() -> UIView {
+        let stack = UIStackView(arrangedSubviews: [photoView, photoButton])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 10
+        return stack
+    }
+
+    private func makePhotoMenu() -> UIMenu {
+        var actions: [UIAction] = [UIAction(title: "Elegir de la galería", image: UIImage(systemName: "photo.on.rectangle")) { [weak self] _ in
+            self?.presentImagePicker(source: .photoLibrary)
+        }]
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            actions.insert(UIAction(title: "Tomar fotografía", image: UIImage(systemName: "camera")) { [weak self] _ in
+                self?.presentImagePicker(source: .camera)
+            }, at: 0)
+        }
+        return UIMenu(title: "Fotografía del perfil", children: actions)
+    }
+
     private func makeField(_ item: (String, UIView)) -> UIStackView {
         let label = UILabel()
         label.text = item.0
@@ -118,6 +158,11 @@ final class PersonalProfileFormViewController: UIViewController {
 
     private func populateIfNeeded() {
         guard let profile else { return }
+        if let image = ProfilePhotoStore.shared.image(for: profile.id) {
+            selectedPhoto = image
+            photoView.image = image
+            photoButton.configuration?.title = "Cambiar fotografía"
+        }
         firstNameField.text = profile.firstName
         lastNameField.text = profile.lastName
         documentField.text = profile.documentNumber
@@ -159,12 +204,29 @@ final class PersonalProfileFormViewController: UIViewController {
             countryName: selectedCountry?.name.common ?? profile?.countryName
         )
         do {
-            if let profile { try PersonalProfileRepository.shared.update(profile, with: input) }
-            else { try PersonalProfileRepository.shared.create(input) }
+            let savedProfile: PersonalProfile
+            if let profile {
+                try PersonalProfileRepository.shared.update(profile, with: input)
+                savedProfile = profile
+            } else {
+                savedProfile = try PersonalProfileRepository.shared.create(input)
+            }
+            if let selectedPhoto, let profileID = savedProfile.id {
+                try ProfilePhotoStore.shared.save(selectedPhoto, for: profileID)
+            }
             navigationController?.popViewController(animated: true)
         } catch {
             showError(error, title: "No se pudo guardar el perfil")
         }
+    }
+
+
+    private func presentImagePicker(source: UIImagePickerController.SourceType) {
+        let picker = UIImagePickerController()
+        picker.sourceType = source
+        picker.delegate = self
+        picker.allowsEditing = true
+        present(picker, animated: true)
     }
 
     private func normalizedPhone(_ text: String?) -> String {
@@ -195,5 +257,22 @@ final class PersonalProfileFormViewController: UIViewController {
         let alert = UIAlertController(title: "Revisa los datos", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Corregir", style: .default) { _ in focus.becomeFirstResponder() })
         present(alert, animated: true)
+    }
+}
+
+extension PersonalProfileFormViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+    ) {
+        let image = (info[.editedImage] ?? info[.originalImage]) as? UIImage
+        selectedPhoto = image
+        photoView.image = image
+        photoButton.configuration?.title = "Cambiar fotografía"
+        picker.dismiss(animated: true)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }
