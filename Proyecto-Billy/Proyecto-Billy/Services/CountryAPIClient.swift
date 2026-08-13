@@ -1,12 +1,12 @@
 import Foundation
 
-struct Country: Decodable, Sendable {
-    struct Name: Decodable, Sendable {
+nonisolated struct Country: Decodable, Sendable {
+    nonisolated struct Name: Decodable, Sendable {
         let common: String
         let official: String
     }
 
-    private struct Region: Decodable { let value: String }
+    private nonisolated struct Region: Decodable, Sendable { let value: String }
 
     let name: Name
     let cca2: String
@@ -41,7 +41,7 @@ struct Country: Decodable, Sendable {
     var displayName: String { "\(flag) \(name.common)" }
 }
 
-private struct WorldBankCountriesResponse: Decodable {
+private nonisolated struct WorldBankCountriesResponse: Decodable, Sendable {
     let countries: [Country]
 
     init(from decoder: Decoder) throws {
@@ -51,11 +51,11 @@ private struct WorldBankCountriesResponse: Decodable {
     }
 }
 
-private struct WorldBankPage: Decodable {
+private nonisolated struct WorldBankPage: Decodable, Sendable {
     let page: Int
 }
 
-enum APIClientError: LocalizedError {
+nonisolated enum APIClientError: LocalizedError {
     case invalidURL
     case invalidResponse
     case httpStatus(Int)

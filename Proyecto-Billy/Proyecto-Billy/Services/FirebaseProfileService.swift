@@ -3,7 +3,7 @@ import FirebaseCore
 import FirebaseFirestore
 import Foundation
 
-struct CloudProfile: Sendable {
+nonisolated struct CloudProfile: Sendable {
     let id: UUID
     let firstName: String?
     let lastName: String?
@@ -69,7 +69,7 @@ struct CloudProfile: Sendable {
     }
 }
 
-enum FirebaseSyncError: LocalizedError {
+nonisolated enum FirebaseSyncError: LocalizedError {
     case notConfigured
 
     var errorDescription: String? {
@@ -77,7 +77,7 @@ enum FirebaseSyncError: LocalizedError {
     }
 }
 
-struct AccountSession: Sendable {
+nonisolated struct AccountSession: Sendable {
     let userID: String
     let email: String?
     let isAnonymous: Bool
