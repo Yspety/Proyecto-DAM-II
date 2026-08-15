@@ -21,4 +21,5 @@ tmp/
 
 # Secrets and local Firebase configuration
 GoogleService-Info.plist
+!Proyecto-Billy/Proyecto-Billy/GoogleService-Info.plist
 *.env
