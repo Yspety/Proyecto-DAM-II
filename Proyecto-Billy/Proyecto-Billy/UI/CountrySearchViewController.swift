@@ -14,6 +14,8 @@ final class CountrySearchViewController: UITableViewController, UISearchResultsU
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Buscar país"
+        definesPresentationContext = true
+        navigationItem.largeTitleDisplayMode = .never
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
         searchController.searchBar.placeholder = "Ej. Perú"
@@ -23,6 +25,12 @@ final class CountrySearchViewController: UITableViewController, UISearchResultsU
         tableView.backgroundView = makeMessage("Escribe al menos dos letras para consultar el servicio REST.")
         loadingIndicator.hidesWhenStopped = true
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: loadingIndicator)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        searchController.isActive = true
+        searchController.searchBar.searchTextField.becomeFirstResponder()
     }
 
     deinit { searchTask?.cancel() }

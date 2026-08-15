@@ -36,6 +36,8 @@ final class PageContainerViewController: UIViewController {
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(selectorChanged), for: .valueChanged)
         control.translatesAutoresizingMaskIntoConstraints = false
+        control.setContentHuggingPriority(.required, for: .vertical)
+        control.setContentCompressionResistancePriority(.required, for: .vertical)
         control.accessibilityLabel = "Secciones de Billy"
         return control
     }()
@@ -162,6 +164,7 @@ final class PageContainerViewController: UIViewController {
             selector.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
             selector.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
             selector.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            selector.heightAnchor.constraint(equalToConstant: 36),
 
             pageView.topAnchor.constraint(equalTo: selector.bottomAnchor, constant: 8),
             pageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
