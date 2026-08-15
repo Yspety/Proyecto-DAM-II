@@ -2,92 +2,46 @@ import FirebaseAuth
 import UIKit
 
 final class AccountViewController: UIViewController {
-    private let statusLabel = UILabel()
-    private let emailField = UITextField()
-    private let passwordField = UITextField()
-    private let registerButton = UIButton(type: .system)
-    private let signInButton = UIButton(type: .system)
-    private let signOutButton = UIButton(type: .system)
-    private let deleteButton = UIButton(type: .system)
-    private let deleteLocalButton = UIButton(type: .system)
-    private let indicator = UIActivityIndicatorView(style: .medium)
+    @IBOutlet private weak var statusLabel: UILabel!
+    @IBOutlet private weak var emailField: UITextField!
+    @IBOutlet private weak var passwordField: UITextField!
+    @IBOutlet private weak var registerButton: UIButton!
+    @IBOutlet private weak var signInButton: UIButton!
+    @IBOutlet private weak var signOutButton: UIButton!
+    @IBOutlet private weak var deleteButton: UIButton!
+    @IBOutlet private weak var deleteLocalButton: UIButton!
+    @IBOutlet private weak var indicator: UIActivityIndicatorView!
+
     private var accountTask: Task<Void, Never>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppStyle.background
         navigationItem.largeTitleDisplayMode = .always
-        configureViews()
+        indicator.hidesWhenStopped = true
         refreshSession(createAnonymousIfNeeded: true)
     }
 
     deinit { accountTask?.cancel() }
 
-    private func configureViews() {
-        let icon = UIImageView(image: UIImage(systemName: "person.badge.key.fill"))
-        icon.tintColor = AppStyle.accent
-        icon.contentMode = .scaleAspectFit
-        icon.heightAnchor.constraint(equalToConstant: 64).isActive = true
-
-        statusLabel.font = .preferredFont(forTextStyle: .headline)
-        statusLabel.textAlignment = .center
-        statusLabel.numberOfLines = 0
-
-        configure(emailField, placeholder: "Correo electrónico", contentType: .emailAddress)
-        emailField.keyboardType = .emailAddress
-        emailField.autocapitalizationType = .none
-        configure(passwordField, placeholder: "Contraseña (mínimo 6 caracteres)", contentType: .password)
-        passwordField.isSecureTextEntry = true
-
-        configure(registerButton, title: "Crear o vincular cuenta", image: "person.badge.plus") { [weak self] in
-            self?.authenticate(registering: true)
-        }
-        configure(signInButton, title: "Iniciar sesión", image: "person.crop.circle.badge.checkmark") { [weak self] in
-            self?.authenticate(registering: false)
-        }
-        configure(signOutButton, title: "Cerrar sesión", image: "rectangle.portrait.and.arrow.right") { [weak self] in
-            self?.signOut()
-        }
-        configure(deleteButton, title: "Eliminar cuenta y respaldo", image: "trash") { [weak self] in
-            self?.confirmAccountDeletion()
-        }
-        deleteButton.configuration?.baseForegroundColor = .systemRed
-        configure(deleteLocalButton, title: "Eliminar datos de este dispositivo", image: "iphone.slash") { [weak self] in
-            self?.confirmLocalDeletion()
-        }
-        deleteLocalButton.configuration?.baseForegroundColor = .systemOrange
-        indicator.hidesWhenStopped = true
-
-        let stack = UIStackView(arrangedSubviews: [
-            icon, statusLabel, emailField, passwordField,
-            registerButton, signInButton, signOutButton, deleteButton, deleteLocalButton, indicator
-        ])
-        stack.axis = .vertical
-        stack.spacing = 14
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
-            stack.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 12),
-            stack.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -12)
-        ])
+    @IBAction private func registerTapped(_ sender: UIButton) {
+        authenticate(registering: true)
     }
 
-    private func configure(_ field: UITextField, placeholder: String, contentType: UITextContentType) {
-        field.placeholder = placeholder
-        field.textContentType = contentType
-        field.borderStyle = .roundedRect
-        field.clearButtonMode = .whileEditing
-        field.autocorrectionType = .no
-        field.heightAnchor.constraint(equalToConstant: 46).isActive = true
+    @IBAction private func signInTapped(_ sender: UIButton) {
+        authenticate(registering: false)
     }
 
-    private func configure(_ button: UIButton, title: String, image: String, action: @escaping () -> Void) {
-        button.configuration = .filled()
-        button.configuration?.title = title
-        button.configuration?.image = UIImage(systemName: image)
-        button.configuration?.imagePadding = 8
-        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+    @IBAction private func signOutTapped(_ sender: UIButton) {
+        signOut()
+    }
+
+    @IBAction private func deleteAccountTapped(_ sender: UIButton) {
+        confirmAccountDeletion()
+    }
+
+    @IBAction private func deleteLocalTapped(_ sender: UIButton) {
+        confirmLocalDeletion()
     }
 
     private func authenticate(registering: Bool) {

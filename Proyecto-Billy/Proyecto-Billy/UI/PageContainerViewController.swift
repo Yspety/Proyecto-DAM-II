@@ -1,53 +1,24 @@
 import UIKit
 
 final class PageContainerViewController: UIViewController {
-    private let privacyOverlay = UIView()
-    private let unlockButton = UIButton(type: .system)
+    @IBOutlet private weak var selector: UISegmentedControl!
+    @IBOutlet private weak var pageControl: UIPageControl!
+    @IBOutlet private weak var privacyOverlay: UIView!
+    @IBOutlet private weak var unlockButton: UIButton!
+
+    private var pageViewController: UIPageViewController!
     private var unlockTask: Task<Void, Never>?
     private var requiresUnlock = true
     private let descriptors = PageDescriptor.mainPages
-    private lazy var pages: [UINavigationController] = descriptors.enumerated().map { index, descriptor in
-        let content: UIViewController
-        if index == 0 {
-            content = DashboardViewController()
-            content.title = descriptor.title
-        } else if index == 1 {
-            content = PersonalProfileListViewController()
-            content.title = descriptor.title
-        } else if index == 2 {
-            content = FirebaseSyncViewController()
-            content.title = descriptor.title
-        } else {
-            content = AccountViewController()
-            content.title = descriptor.title
+    private lazy var pages: [UINavigationController] = {
+        let identifiers = ["dashboardNavigation", "profilesNavigation", "servicesNavigation", "accountNavigation"]
+        return identifiers.map { identifier in
+            guard let navigation = storyboard?.instantiateViewController(withIdentifier: identifier) as? UINavigationController else {
+                preconditionFailure("No se encontró la navegación \(identifier) en Main.storyboard")
+            }
+            navigation.navigationBar.prefersLargeTitles = true
+            return navigation
         }
-        let navigation = UINavigationController(rootViewController: content)
-        navigation.navigationBar.prefersLargeTitles = true
-        navigation.view.accessibilityIdentifier = "page-\(index)"
-        return navigation
-    }
-
-    private let pageViewController = UIPageViewController(
-        transitionStyle: .scroll,
-        navigationOrientation: .horizontal
-    )
-    private lazy var selector: UISegmentedControl = {
-        let control = UISegmentedControl(items: descriptors.map(\.shortTitle))
-        control.selectedSegmentIndex = 0
-        control.addTarget(self, action: #selector(selectorChanged), for: .valueChanged)
-        control.translatesAutoresizingMaskIntoConstraints = false
-        control.setContentHuggingPriority(.required, for: .vertical)
-        control.setContentCompressionResistancePriority(.required, for: .vertical)
-        control.accessibilityLabel = "Secciones de Billy"
-        return control
-    }()
-    private let pageControl: UIPageControl = {
-        let control = UIPageControl()
-        control.currentPageIndicatorTintColor = AppStyle.accent
-        control.pageIndicatorTintColor = .tertiaryLabel
-        control.isUserInteractionEnabled = false
-        control.translatesAutoresizingMaskIntoConstraints = false
-        return control
     }()
 
     private var currentIndex = 0
@@ -56,9 +27,8 @@ final class PageContainerViewController: UIViewController {
         super.viewDidLoad()
         AppStyle.configureAppearance()
         view.backgroundColor = .systemBackground
+        configureStoryboardViews()
         configurePageController()
-        configureLayout()
-        configurePrivacyOverlay()
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(requireAuthentication),
@@ -72,39 +42,37 @@ final class PageContainerViewController: UIViewController {
         if requiresUnlock { authenticate() }
     }
 
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "embedPages", let controller = segue.destination as? UIPageViewController {
+            pageViewController = controller
+        }
+    }
+
     deinit { unlockTask?.cancel() }
 
-    private func configurePrivacyOverlay() {
+    private func configureStoryboardViews() {
+        selector.removeAllSegments()
+        for (index, descriptor) in descriptors.enumerated() {
+            selector.insertSegment(withTitle: descriptor.shortTitle, at: index, animated: false)
+        }
+        selector.selectedSegmentIndex = 0
+        selector.accessibilityLabel = "Secciones de Billy"
+
+        pageControl.numberOfPages = descriptors.count
+        pageControl.currentPage = 0
+        pageControl.currentPageIndicatorTintColor = AppStyle.accent
+        pageControl.pageIndicatorTintColor = .tertiaryLabel
+
         privacyOverlay.backgroundColor = AppStyle.background
-        privacyOverlay.translatesAutoresizingMaskIntoConstraints = false
-        let icon = UIImageView(image: UIImage(systemName: "lock.shield.fill"))
-        icon.tintColor = AppStyle.accent
-        icon.contentMode = .scaleAspectFit
-        icon.heightAnchor.constraint(equalToConstant: 76).isActive = true
-        let title = UILabel()
-        title.text = "Datos personales protegidos"
-        title.font = .preferredFont(forTextStyle: .title2)
-        title.textAlignment = .center
-        unlockButton.configuration = .filled()
-        unlockButton.configuration?.title = "Desbloquear con \(BiometricAuthService.shared.biometricName())"
-        unlockButton.configuration?.image = UIImage(systemName: "faceid")
-        unlockButton.configuration?.imagePadding = 8
-        unlockButton.addAction(UIAction { [weak self] _ in self?.authenticate() }, for: .touchUpInside)
-        let stack = UIStackView(arrangedSubviews: [icon, title, unlockButton])
-        stack.axis = .vertical
-        stack.spacing = 20
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        privacyOverlay.addSubview(stack)
-        view.addSubview(privacyOverlay)
-        NSLayoutConstraint.activate([
-            privacyOverlay.topAnchor.constraint(equalTo: view.topAnchor),
-            privacyOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            privacyOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            privacyOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.centerYAnchor.constraint(equalTo: privacyOverlay.centerYAnchor),
-            stack.leadingAnchor.constraint(equalTo: privacyOverlay.layoutMarginsGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: privacyOverlay.layoutMarginsGuide.trailingAnchor, constant: -20)
-        ])
+        unlockButton.setTitle("Desbloquear con \(BiometricAuthService.shared.biometricName())", for: .normal)
+    }
+
+    @IBAction private func selectorChanged(_ sender: UISegmentedControl) {
+        showPage(at: sender.selectedSegmentIndex, animated: true)
+    }
+
+    @IBAction private func unlockTapped(_ sender: UIButton) {
+        authenticate()
     }
 
     @objc private func requireAuthentication() {
@@ -144,41 +112,12 @@ final class PageContainerViewController: UIViewController {
     }
 
     private func configurePageController() {
+        guard pageViewController != nil else {
+            preconditionFailure("Main.storyboard no conectó el contenedor UIPageViewController")
+        }
         pageViewController.dataSource = self
         pageViewController.delegate = self
         pageViewController.setViewControllers([pages[0]], direction: .forward, animated: false)
-        pageControl.numberOfPages = pages.count
-        pageControl.currentPage = 0
-    }
-
-    private func configureLayout() {
-        addChild(pageViewController)
-        let pageView = pageViewController.view!
-        pageView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(selector)
-        view.addSubview(pageView)
-        view.addSubview(pageControl)
-        pageViewController.didMove(toParent: self)
-
-        NSLayoutConstraint.activate([
-            selector.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            selector.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            selector.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-            selector.heightAnchor.constraint(equalToConstant: 36),
-
-            pageView.topAnchor.constraint(equalTo: selector.bottomAnchor, constant: 8),
-            pageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            pageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            pageView.bottomAnchor.constraint(equalTo: pageControl.topAnchor, constant: -2),
-
-            pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            pageControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -4),
-            pageControl.heightAnchor.constraint(equalToConstant: 24)
-        ])
-    }
-
-    @objc private func selectorChanged() {
-        showPage(at: selector.selectedSegmentIndex, animated: true)
     }
 
     private func showPage(at index: Int, animated: Bool) {

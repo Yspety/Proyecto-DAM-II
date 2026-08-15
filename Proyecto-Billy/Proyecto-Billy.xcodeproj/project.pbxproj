@@ -6,14 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXFileReference section */
-		B719E72F302BDD1F00C171D2 /* Proyecto-Billy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Proyecto-Billy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
-
 /* Begin PBXBuildFile section */
 		F10000010000000000000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F10000020000000000000001 /* FirebaseAuth */; };
 		F10000010000000000000002 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F10000020000000000000002 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B719E72F302BDD1F00C171D2 /* Proyecto-Billy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Proyecto-Billy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		B719E744302BDD2000C171D2 /* Exceptions for "Proyecto-Billy" folder in "Proyecto-Billy" target */ = {
@@ -116,11 +116,11 @@
 			);
 			mainGroup = B719E726302BDD1F00C171D2;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
-			productRefGroup = B719E730302BDD1F00C171D2 /* Products */;
 			packageReferences = (
 				F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B719E730302BDD1F00C171D2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -149,30 +149,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.0.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		F10000020000000000000001 /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		F10000020000000000000002 /* FirebaseFirestore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
-		};
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin XCBuildConfiguration section */
 		B719E746302BDD2000C171D2 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -181,10 +157,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				EXCLUDED_SOURCE_FILE_NAMES = (
-					Main.storyboard,
-					LaunchScreen.storyboard,
-				);
+				EXCLUDED_SOURCE_FILE_NAMES = LaunchScreen.storyboard;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Proyecto-Billy/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Billy usa la cámara para agregar una fotografía al perfil personal.";
@@ -218,10 +191,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				EXCLUDED_SOURCE_FILE_NAMES = (
-					Main.storyboard,
-					LaunchScreen.storyboard,
-				);
+				EXCLUDED_SOURCE_FILE_NAMES = LaunchScreen.storyboard;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Proyecto-Billy/Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Billy usa la cámara para agregar una fotografía al perfil personal.";
@@ -389,6 +359,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F10000020000000000000001 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		F10000020000000000000002 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F10000030000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B719E727302BDD1F00C171D2 /* Project object */;
 }

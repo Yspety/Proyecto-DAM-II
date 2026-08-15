@@ -1,41 +1,30 @@
 import UIKit
 
 final class PersonalProfileFormViewController: UIViewController {
-    private let profile: PersonalProfile?
-    private let firstNameField = UITextField()
-    private let lastNameField = UITextField()
-    private let documentField = UITextField()
-    private let phoneField = UITextField()
-    private let emailField = UITextField()
-    private let addressField = UITextField()
-    private let emergencyField = UITextField()
-    private let countryButton = UIButton(type: .system)
-    private let birthDatePicker = UIDatePicker()
-    private let notesView = UITextView()
-    private let photoView = UIImageView()
-    private let photoButton = UIButton(type: .system)
+    @IBOutlet private weak var firstNameField: UITextField!
+    @IBOutlet private weak var lastNameField: UITextField!
+    @IBOutlet private weak var documentField: UITextField!
+    @IBOutlet private weak var phoneField: UITextField!
+    @IBOutlet private weak var emailField: UITextField!
+    @IBOutlet private weak var addressField: UITextField!
+    @IBOutlet private weak var emergencyField: UITextField!
+    @IBOutlet private weak var countryButton: UIButton!
+    @IBOutlet private weak var birthDatePicker: UIDatePicker!
+    @IBOutlet private weak var notesView: UITextView!
+    @IBOutlet private weak var photoView: UIImageView!
+    @IBOutlet private weak var photoButton: UIButton!
+
+    var profile: PersonalProfile?
     private var selectedCountry: Country?
     private var selectedPhoto: UIImage?
 
-    init(profile: PersonalProfile? = nil) {
-        self.profile = profile
-        super.init(nibName: nil, bundle: nil)
-        title = profile == nil ? "Nuevo perfil" : "Editar perfil"
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) no está disponible") }
-
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = profile == nil ? "Nuevo perfil" : "Editar perfil"
         view.backgroundColor = AppStyle.background
         navigationItem.largeTitleDisplayMode = .never
         configureControls()
-        configureLayout()
         populateIfNeeded()
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Guardar",
-            primaryAction: UIAction { [weak self] _ in self?.save() }
-        )
     }
 
     private func configureControls() {
@@ -46,92 +35,13 @@ final class PersonalProfileFormViewController: UIViewController {
         photoView.layer.cornerRadius = 55
         photoView.layer.borderWidth = 2
         photoView.layer.borderColor = AppStyle.accent.cgColor
-        NSLayoutConstraint.activate([
-            photoView.widthAnchor.constraint(equalToConstant: 110),
-            photoView.heightAnchor.constraint(equalToConstant: 110)
-        ])
-        photoButton.configuration = .bordered()
-        photoButton.configuration?.title = "Agregar fotografía"
-        photoButton.configuration?.image = UIImage(systemName: "camera.fill")
         photoButton.menu = makePhotoMenu()
         photoButton.showsMenuAsPrimaryAction = true
-        configure(firstNameField, placeholder: "Nombres", contentType: .givenName)
-        configure(lastNameField, placeholder: "Apellidos", contentType: .familyName)
-        configure(documentField, placeholder: "DNI o documento", keyboard: .numberPad)
-        configure(phoneField, placeholder: "Teléfono", keyboard: .phonePad, contentType: .telephoneNumber)
-        configure(emailField, placeholder: "Correo", keyboard: .emailAddress, contentType: .emailAddress)
-        configure(addressField, placeholder: "Dirección", contentType: .fullStreetAddress)
-        configure(emergencyField, placeholder: "Contacto de emergencia", contentType: .telephoneNumber)
-
-        countryButton.configuration = .bordered()
-        countryButton.configuration?.title = "Seleccionar país"
-        countryButton.configuration?.image = UIImage(systemName: "globe.americas.fill")
-        countryButton.contentHorizontalAlignment = .leading
-        countryButton.addAction(UIAction { [weak self] _ in self?.showCountrySearch() }, for: .touchUpInside)
-
-        birthDatePicker.datePickerMode = .date
-        birthDatePicker.preferredDatePickerStyle = .compact
         birthDatePicker.maximumDate = Date()
-
-        notesView.font = .preferredFont(forTextStyle: .body)
-        notesView.backgroundColor = .secondarySystemGroupedBackground
         notesView.layer.cornerRadius = 10
         notesView.layer.borderWidth = 1
         notesView.layer.borderColor = UIColor.separator.cgColor
-        notesView.heightAnchor.constraint(equalToConstant: 100).isActive = true
         notesView.accessibilityLabel = "Notas"
-    }
-
-    private func configure(
-        _ field: UITextField,
-        placeholder: String,
-        keyboard: UIKeyboardType = .default,
-        contentType: UITextContentType? = nil
-    ) {
-        field.placeholder = placeholder
-        field.borderStyle = .roundedRect
-        field.keyboardType = keyboard
-        field.textContentType = contentType
-        field.autocapitalizationType = keyboard == .emailAddress ? .none : .sentences
-    }
-
-    private func configureLayout() {
-        let fields: [(String, UIView)] = [
-            ("Fotografía", makePhotoControl()),
-            ("Nombres *", firstNameField), ("Apellidos *", lastNameField),
-            ("Documento *", documentField), ("Teléfono", phoneField),
-            ("Correo", emailField), ("Fecha de nacimiento", birthDatePicker),
-            ("País (servicio REST)", countryButton), ("Dirección", addressField), ("Emergencia", emergencyField),
-            ("Notas", notesView)
-        ]
-        let stack = UIStackView(arrangedSubviews: fields.map(makeField))
-        stack.axis = .vertical
-        stack.spacing = 18
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        let scroll = UIScrollView()
-        scroll.keyboardDismissMode = .interactive
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scroll)
-        scroll.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: scroll.frameLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scroll.frameLayoutGuide.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -30)
-        ])
-    }
-
-    private func makePhotoControl() -> UIView {
-        let stack = UIStackView(arrangedSubviews: [photoView, photoButton])
-        stack.axis = .vertical
-        stack.alignment = .center
-        stack.spacing = 10
-        return stack
     }
 
     private func makePhotoMenu() -> UIMenu {
@@ -146,22 +56,12 @@ final class PersonalProfileFormViewController: UIViewController {
         return UIMenu(title: "Fotografía del perfil", children: actions)
     }
 
-    private func makeField(_ item: (String, UIView)) -> UIStackView {
-        let label = UILabel()
-        label.text = item.0
-        label.font = .preferredFont(forTextStyle: .headline)
-        let stack = UIStackView(arrangedSubviews: [label, item.1])
-        stack.axis = .vertical
-        stack.spacing = 6
-        return stack
-    }
-
     private func populateIfNeeded() {
         guard let profile else { return }
         if let image = ProfilePhotoStore.shared.image(for: profile.id) {
             selectedPhoto = image
             photoView.image = image
-            photoButton.configuration?.title = "Cambiar fotografía"
+            photoButton.setTitle("Cambiar fotografía", for: .normal)
         }
         firstNameField.text = profile.firstName
         lastNameField.text = profile.lastName
@@ -173,7 +73,7 @@ final class PersonalProfileFormViewController: UIViewController {
         notesView.text = profile.notes
         birthDatePicker.date = profile.birthDate ?? Date()
         if let name = profile.countryName, !name.isEmpty {
-            countryButton.configuration?.title = name
+            countryButton.setTitle(name, for: .normal)
         }
     }
 
@@ -220,6 +120,14 @@ final class PersonalProfileFormViewController: UIViewController {
         }
     }
 
+    @IBAction private func saveTapped(_ sender: UIBarButtonItem) {
+        save()
+    }
+
+    @IBAction private func countryTapped(_ sender: UIButton) {
+        showCountrySearch()
+    }
+
 
     private func presentImagePicker(source: UIImagePickerController.SourceType) {
         let picker = UIImagePickerController()
@@ -245,10 +153,12 @@ final class PersonalProfileFormViewController: UIViewController {
     }
 
     private func showCountrySearch() {
-        let controller = CountrySearchViewController()
+        guard let controller = storyboard?.instantiateViewController(withIdentifier: "countrySearch") as? CountrySearchViewController else {
+            return assertionFailure("CountrySearchViewController no está configurado en Main.storyboard")
+        }
         controller.onSelection = { [weak self] country in
             self?.selectedCountry = country
-            self?.countryButton.configuration?.title = country.displayName
+            self?.countryButton.setTitle(country.displayName, for: .normal)
         }
         navigationController?.pushViewController(controller, animated: true)
     }
@@ -268,7 +178,7 @@ extension PersonalProfileFormViewController: UIImagePickerControllerDelegate, UI
         let image = (info[.editedImage] ?? info[.originalImage]) as? UIImage
         selectedPhoto = image
         photoView.image = image
-        photoButton.configuration?.title = "Cambiar fotografía"
+        photoButton.setTitle("Cambiar fotografía", for: .normal)
         picker.dismiss(animated: true)
     }
 

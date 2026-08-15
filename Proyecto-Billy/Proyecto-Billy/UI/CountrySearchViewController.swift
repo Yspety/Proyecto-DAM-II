@@ -8,9 +8,6 @@ final class CountrySearchViewController: UITableViewController, UISearchResultsU
     private var countries: [Country] = []
     private var searchTask: Task<Void, Never>?
 
-    init() { super.init(style: .insetGrouped) }
-    required init?(coder: NSCoder) { fatalError("init(coder:) no está disponible") }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Buscar país"

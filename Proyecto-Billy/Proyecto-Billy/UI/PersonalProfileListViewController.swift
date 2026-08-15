@@ -32,9 +32,6 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
         return label
     }()
 
-    init() { super.init(style: .insetGrouped) }
-    required init?(coder: NSCoder) { fatalError("init(coder:) no está disponible") }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.largeTitleDisplayMode = .always
@@ -112,7 +109,11 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
     }
 
     private func showForm(profile: PersonalProfile? = nil) {
-        navigationController?.pushViewController(PersonalProfileFormViewController(profile: profile), animated: true)
+        guard let controller = storyboard?.instantiateViewController(withIdentifier: "profileForm") as? PersonalProfileFormViewController else {
+            return assertionFailure("PersonalProfileFormViewController no está configurado en Main.storyboard")
+        }
+        controller.profile = profile
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     private func updateEmptyState() {

@@ -1,6 +1,6 @@
 # Proyecto DAM II — Gestor de datos personales
 
-Aplicación móvil para iOS desarrollada con Swift y UIKit que permite registrar, organizar y proteger datos personales. El proyecto integra persistencia local, servicios REST, sincronización con Firebase y herramientas nativas de iOS.
+Aplicación móvil para iOS desarrollada con Swift, UIKit e Interface Builder mediante `Main.storyboard`. Permite registrar, organizar y proteger datos personales e integra persistencia local, servicios REST, sincronización con Firebase y herramientas nativas de iOS.
 
 ## Meta del proyecto
 
@@ -8,7 +8,7 @@ La meta es ofrecer una aplicación sencilla y segura para gestionar perfiles per
 
 El proyecto también busca demostrar la aplicación práctica de los temas del curso de Desarrollo de Aplicaciones Móviles II:
 
-- Swift y UIKit.
+- Swift, UIKit, Storyboard, Auto Layout, outlets y actions.
 - Navegación entre pantallas.
 - UITableView y UICollectionView.
 - Core Data.
@@ -80,6 +80,7 @@ El proyecto incorpora las siguientes medidas:
 
 - Swift 5.
 - UIKit.
+- Interface Builder y `Main.storyboard`.
 - Core Data.
 - URLSession y Codable.
 - Swift Concurrency (`async/await`, `Task` y `actor`).
@@ -100,10 +101,11 @@ El proyecto incorpora las siguientes medidas:
 
 1. Clonar el repositorio.
 2. Abrir `Proyecto-Billy/Proyecto-Billy.xcodeproj` en Xcode.
-3. Esperar a que Swift Package Manager resuelva Firebase.
-4. Confirmar que el target utiliza el bundle ID `com.cibertec.Proyecto-Billy`.
-5. Seleccionar un simulador o dispositivo iOS.
-6. Ejecutar con el botón **Run** de Xcode.
+3. Abrir `Base.lproj/Main.storyboard` para revisar las escenas, navegación y conexiones visuales.
+4. Esperar a que Swift Package Manager resuelva Firebase.
+5. Confirmar que el target utiliza el bundle ID `com.cibertec.Proyecto-Billy`.
+6. Seleccionar un simulador o dispositivo iOS.
+7. Ejecutar con el botón **Run** de Xcode.
 
 El archivo `GoogleService-Info.plist` incluido corresponde al proyecto Firebase configurado para esta aplicación. No debe publicarse en otros proyectos ni reutilizarse con un bundle ID diferente.
 

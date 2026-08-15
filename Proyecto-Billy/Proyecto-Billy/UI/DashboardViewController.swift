@@ -11,6 +11,9 @@ fileprivate struct ProfileGroup: Hashable {
 }
 
 final class DashboardViewController: UIViewController {
+    @IBOutlet private weak var collectionView: UICollectionView!
+    @IBOutlet private weak var loadingIndicator: UIActivityIndicatorView!
+
     fileprivate struct Metric {
         let title: String
         let value: String
@@ -27,40 +30,19 @@ final class DashboardViewController: UIViewController {
     private var profileGroups: [(group: ProfileGroup, count: Int)] = []
     private var reloadTask: Task<Void, Never>?
 
-    private let loadingIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.hidesWhenStopped = true
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.accessibilityLabel = "Calculando resumen de perfiles"
-        return indicator
-    }()
-
-    private lazy var collectionView: UICollectionView = {
-        let view = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
-        view.backgroundColor = AppStyle.background
-        view.dataSource = self
-        view.alwaysBounceVertical = true
-        view.register(MetricCollectionViewCell.self, forCellWithReuseIdentifier: MetricCollectionViewCell.reuseIdentifier)
-        view.register(DynamicsCollectionViewCell.self, forCellWithReuseIdentifier: DynamicsCollectionViewCell.reuseIdentifier)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.accessibilityIdentifier = "dashboard-collection"
-        return view
-    }()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppStyle.background
         navigationItem.largeTitleDisplayMode = .always
-        view.addSubview(collectionView)
-        view.addSubview(loadingIndicator)
-        NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
+        collectionView.collectionViewLayout = makeLayout()
+        collectionView.backgroundColor = AppStyle.background
+        collectionView.dataSource = self
+        collectionView.alwaysBounceVertical = true
+        collectionView.register(MetricCollectionViewCell.self, forCellWithReuseIdentifier: MetricCollectionViewCell.reuseIdentifier)
+        collectionView.register(DynamicsCollectionViewCell.self, forCellWithReuseIdentifier: DynamicsCollectionViewCell.reuseIdentifier)
+        collectionView.accessibilityIdentifier = "dashboard-collection"
+        loadingIndicator.hidesWhenStopped = true
+        loadingIndicator.accessibilityLabel = "Calculando resumen de perfiles"
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(profilesDidChange),

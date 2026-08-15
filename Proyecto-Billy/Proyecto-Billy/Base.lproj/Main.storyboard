@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="main-vc">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
@@ -8,25 +8,536 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--View Controller-->
-        <scene sceneID="tne-QT-ifu">
+        <!--Contenedor principal-->
+        <scene sceneID="scene-main">
             <objects>
-                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                <viewController id="main-vc" customClass="PageContainerViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="main-view">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                        <subviews>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="main-selector">
+                                <rect key="frame" x="16" y="67" width="361" height="36"/>
+                                <segments>
+                                    <segment title="Resumen"/>
+                                    <segment title="Perfiles"/>
+                                    <segment title="Servicios"/>
+                                    <segment title="Cuenta"/>
+                                </segments>
+                                <connections>
+                                    <action selector="selectorChanged:" destination="main-vc" eventType="valueChanged" id="action-selector"/>
+                                </connections>
+                            </segmentedControl>
+                            <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="page-container">
+                                <rect key="frame" x="0.0" y="111" width="393" height="700"/>
+                                <connections>
+                                    <segue destination="page-vc" kind="embed" identifier="embedPages" id="segue-embed-pages"/>
+                                </connections>
+                            </containerView>
+                            <pageControl opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" numberOfPages="4" id="main-page-control">
+                                <rect key="frame" x="168" y="811" width="57" height="24"/>
+                            </pageControl>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="privacy-overlay">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <subviews>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="privacy-stack">
+                                        <rect key="frame" x="36" y="326" width="321" height="200"/>
+                                        <subviews>
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="lock.shield.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="privacy-icon">
+                                                <rect key="frame" x="0.0" y="0.0" width="321" height="76"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="76" id="privacy-icon-height"/>
+                                                </constraints>
+                                                <color key="tintColor" systemColor="systemBlueColor"/>
+                                            </imageView>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Datos personales protegidos" textAlignment="center" numberOfLines="0" translatesAutoresizingMaskIntoConstraints="NO" id="privacy-title">
+                                                <rect key="frame" x="0.0" y="96" width="321" height="29"/>
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
+                                            </label>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="unlock-button">
+                                                <rect key="frame" x="0.0" y="145" width="321" height="55"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="55" id="unlock-height"/>
+                                                </constraints>
+                                                <state key="normal" title="Desbloquear con biometría"/>
+                                                <connections>
+                                                    <action selector="unlockTapped:" destination="main-vc" eventType="touchUpInside" id="action-unlock"/>
+                                                </connections>
+                                            </button>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstItem="privacy-stack" firstAttribute="centerX" secondItem="privacy-overlay" secondAttribute="centerX" id="privacy-center-x"/>
+                                    <constraint firstItem="privacy-stack" firstAttribute="centerY" secondItem="privacy-overlay" secondAttribute="centerY" id="privacy-center-y"/>
+                                    <constraint firstItem="privacy-stack" firstAttribute="leading" secondItem="privacy-overlay" secondAttribute="leading" constant="36" id="privacy-leading"/>
+                                    <constraint firstAttribute="trailing" secondItem="privacy-stack" secondAttribute="trailing" constant="36" id="privacy-trailing"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="main-safe"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="main-selector" firstAttribute="top" secondItem="main-safe" secondAttribute="top" constant="10" id="selector-top"/>
+                            <constraint firstItem="main-selector" firstAttribute="leading" secondItem="main-safe" secondAttribute="leading" constant="16" id="selector-leading"/>
+                            <constraint firstItem="main-safe" firstAttribute="trailing" secondItem="main-selector" secondAttribute="trailing" constant="16" id="selector-trailing"/>
+                            <constraint firstItem="main-selector" firstAttribute="height" constant="36" id="selector-height"/>
+                            <constraint firstItem="page-container" firstAttribute="top" secondItem="main-selector" secondAttribute="bottom" constant="8" id="container-top"/>
+                            <constraint firstItem="page-container" firstAttribute="leading" secondItem="main-view" secondAttribute="leading" id="container-leading"/>
+                            <constraint firstAttribute="trailing" secondItem="page-container" secondAttribute="trailing" id="container-trailing"/>
+                            <constraint firstItem="main-page-control" firstAttribute="top" secondItem="page-container" secondAttribute="bottom" constant="2" id="page-control-top"/>
+                            <constraint firstItem="main-page-control" firstAttribute="centerX" secondItem="main-view" secondAttribute="centerX" id="page-control-center"/>
+                            <constraint firstItem="main-safe" firstAttribute="bottom" secondItem="main-page-control" secondAttribute="bottom" constant="4" id="page-control-bottom"/>
+                            <constraint firstItem="main-page-control" firstAttribute="height" constant="24" id="page-control-height"/>
+                            <constraint firstItem="privacy-overlay" firstAttribute="top" secondItem="main-view" secondAttribute="top" id="privacy-top"/>
+                            <constraint firstItem="privacy-overlay" firstAttribute="leading" secondItem="main-view" secondAttribute="leading" id="privacy-left"/>
+                            <constraint firstAttribute="trailing" secondItem="privacy-overlay" secondAttribute="trailing" id="privacy-right"/>
+                            <constraint firstAttribute="bottom" secondItem="privacy-overlay" secondAttribute="bottom" id="privacy-bottom"/>
+                        </constraints>
                     </view>
+                    <connections>
+                        <outlet property="pageControl" destination="main-page-control" id="outlet-page-control"/>
+                        <outlet property="privacyOverlay" destination="privacy-overlay" id="outlet-privacy"/>
+                        <outlet property="selector" destination="main-selector" id="outlet-selector"/>
+                        <outlet property="unlockButton" destination="unlock-button" id="outlet-unlock"/>
+                    </connections>
                 </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-main" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-471" y="160"/>
+            <point key="canvasLocation" x="-1050" y="40"/>
+        </scene>
+
+        <!--Page View Controller-->
+        <scene sceneID="scene-page">
+            <objects>
+                <pageViewController transitionStyle="scroll" navigationOrientation="horizontal" spineLocation="none" id="page-vc" sceneMemberID="viewController"/>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-page" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-250" y="40"/>
+        </scene>
+
+        <!--Navegación Resumen-->
+        <scene sceneID="scene-nav-dashboard">
+            <objects>
+                <navigationController storyboardIdentifier="dashboardNavigation" id="nav-dashboard" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="bar-dashboard"/>
+                    <connections>
+                        <segue destination="dashboard-vc" kind="relationship" relationship="rootViewController" id="root-dashboard"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-nav-dashboard" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="540" y="-900"/>
+        </scene>
+
+        <!--Resumen-->
+        <scene sceneID="scene-dashboard">
+            <objects>
+                <viewController id="dashboard-vc" customClass="DashboardViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="dashboard-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="none" translatesAutoresizingMaskIntoConstraints="NO" id="dashboard-collection">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="dashboard-layout">
+                                    <size key="itemSize" width="160" height="120"/>
+                                    <size key="headerReferenceSize" width="0.0" height="0.0"/>
+                                    <size key="footerReferenceSize" width="0.0" height="0.0"/>
+                                    <inset key="sectionInset" minX="10" minY="10" maxX="10" maxY="10"/>
+                                </collectionViewFlowLayout>
+                            </collectionView>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="dashboard-indicator">
+                                <rect key="frame" x="176" y="406" width="40" height="40"/>
+                            </activityIndicatorView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="dashboard-safe"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="dashboard-collection" firstAttribute="top" secondItem="dashboard-view" secondAttribute="top" id="dash-top"/>
+                            <constraint firstItem="dashboard-collection" firstAttribute="leading" secondItem="dashboard-view" secondAttribute="leading" id="dash-left"/>
+                            <constraint firstAttribute="trailing" secondItem="dashboard-collection" secondAttribute="trailing" id="dash-right"/>
+                            <constraint firstAttribute="bottom" secondItem="dashboard-collection" secondAttribute="bottom" id="dash-bottom"/>
+                            <constraint firstItem="dashboard-indicator" firstAttribute="centerX" secondItem="dashboard-view" secondAttribute="centerX" id="dash-ind-x"/>
+                            <constraint firstItem="dashboard-indicator" firstAttribute="centerY" secondItem="dashboard-view" secondAttribute="centerY" id="dash-ind-y"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Resumen" id="dashboard-nav-item"/>
+                    <connections>
+                        <outlet property="collectionView" destination="dashboard-collection" id="outlet-dashboard-collection"/>
+                        <outlet property="loadingIndicator" destination="dashboard-indicator" id="outlet-dashboard-indicator"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-dashboard" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1320" y="-900"/>
+        </scene>
+
+        <!--Navegación Perfiles-->
+        <scene sceneID="scene-nav-profiles">
+            <objects>
+                <navigationController storyboardIdentifier="profilesNavigation" id="nav-profiles" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="bar-profiles"/>
+                    <connections>
+                        <segue destination="profiles-vc" kind="relationship" relationship="rootViewController" id="root-profiles"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-nav-profiles" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="540" y="-280"/>
+        </scene>
+
+        <!--Perfiles-->
+        <scene sceneID="scene-profiles">
+            <objects>
+                <tableViewController id="profiles-vc" customClass="PersonalProfileListViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="insetGrouped" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="profiles-table">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <connections>
+                            <outlet property="dataSource" destination="profiles-vc" id="profiles-data-source"/>
+                            <outlet property="delegate" destination="profiles-vc" id="profiles-delegate"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" title="Perfiles" id="profiles-nav-item"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-profiles" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1320" y="-280"/>
+        </scene>
+
+        <!--Formulario de perfil-->
+        <scene sceneID="scene-profile-form">
+            <objects>
+                <viewController storyboardIdentifier="profileForm" id="profile-form-vc" customClass="PersonalProfileFormViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="profile-form-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="interactive" translatesAutoresizingMaskIntoConstraints="NO" id="form-scroll">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <subviews>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="form-stack">
+                                        <rect key="frame" x="20" y="20" width="353" height="810"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Fotografía" translatesAutoresizingMaskIntoConstraints="NO" id="form-photo-label">
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                                            </label>
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" image="person.crop.circle.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="form-photo">
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="110" id="form-photo-height"/>
+                                                </constraints>
+                                                <color key="tintColor" systemColor="systemBlueColor"/>
+                                            </imageView>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="form-photo-button">
+                                                <state key="normal" title="Agregar fotografía"/>
+                                            </button>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Nombres *" textContentType="givenName" translatesAutoresizingMaskIntoConstraints="NO" id="form-first-name"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Apellidos *" textContentType="familyName" translatesAutoresizingMaskIntoConstraints="NO" id="form-last-name"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="DNI o documento *" keyboardType="numberPad" translatesAutoresizingMaskIntoConstraints="NO" id="form-document"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Teléfono" keyboardType="phonePad" textContentType="telephoneNumber" translatesAutoresizingMaskIntoConstraints="NO" id="form-phone"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Correo" keyboardType="emailAddress" textContentType="emailAddress" autocapitalizationType="none" translatesAutoresizingMaskIntoConstraints="NO" id="form-email"/>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Fecha de nacimiento" translatesAutoresizingMaskIntoConstraints="NO" id="form-birth-label">
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                                            </label>
+                                            <datePicker contentMode="scaleToFill" datePickerMode="date" translatesAutoresizingMaskIntoConstraints="NO" id="form-birth-date"/>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="form-country-button">
+                                                <state key="normal" title="Seleccionar país (servicio REST)"/>
+                                                <connections>
+                                                    <action selector="countryTapped:" destination="profile-form-vc" eventType="touchUpInside" id="action-country"/>
+                                                </connections>
+                                            </button>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Dirección" textContentType="fullStreetAddress" translatesAutoresizingMaskIntoConstraints="NO" id="form-address"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Contacto de emergencia" keyboardType="phonePad" textContentType="telephoneNumber" translatesAutoresizingMaskIntoConstraints="NO" id="form-emergency"/>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Notas" translatesAutoresizingMaskIntoConstraints="NO" id="form-notes-label">
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                                            </label>
+                                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="form-notes">
+                                                <color key="backgroundColor" systemColor="secondarySystemGroupedBackgroundColor"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="100" id="form-notes-height"/>
+                                                </constraints>
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                            </textView>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <viewLayoutGuide key="contentLayoutGuide" id="form-content-guide"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="form-frame-guide"/>
+                                <constraints>
+                                    <constraint firstItem="form-stack" firstAttribute="top" secondItem="form-content-guide" secondAttribute="top" constant="20" id="form-stack-top"/>
+                                    <constraint firstItem="form-stack" firstAttribute="leading" secondItem="form-content-guide" secondAttribute="leading" constant="20" id="form-stack-left"/>
+                                    <constraint firstItem="form-content-guide" firstAttribute="trailing" secondItem="form-stack" secondAttribute="trailing" constant="20" id="form-stack-right"/>
+                                    <constraint firstItem="form-content-guide" firstAttribute="bottom" secondItem="form-stack" secondAttribute="bottom" constant="30" id="form-stack-bottom"/>
+                                    <constraint firstItem="form-stack" firstAttribute="width" secondItem="form-frame-guide" secondAttribute="width" constant="-40" id="form-stack-width"/>
+                                </constraints>
+                            </scrollView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="form-safe"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="form-scroll" firstAttribute="top" secondItem="profile-form-view" secondAttribute="top" id="form-scroll-top"/>
+                            <constraint firstItem="form-scroll" firstAttribute="leading" secondItem="profile-form-view" secondAttribute="leading" id="form-scroll-left"/>
+                            <constraint firstAttribute="trailing" secondItem="form-scroll" secondAttribute="trailing" id="form-scroll-right"/>
+                            <constraint firstAttribute="bottom" secondItem="form-scroll" secondAttribute="bottom" id="form-scroll-bottom"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Perfil" id="form-nav-item">
+                        <barButtonItem key="rightBarButtonItem" title="Guardar" id="form-save-button">
+                            <connections>
+                                <action selector="saveTapped:" destination="profile-form-vc" id="action-save-profile"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
+                    <connections>
+                        <outlet property="addressField" destination="form-address" id="outlet-form-address"/>
+                        <outlet property="birthDatePicker" destination="form-birth-date" id="outlet-form-birth"/>
+                        <outlet property="countryButton" destination="form-country-button" id="outlet-form-country"/>
+                        <outlet property="documentField" destination="form-document" id="outlet-form-document"/>
+                        <outlet property="emailField" destination="form-email" id="outlet-form-email"/>
+                        <outlet property="emergencyField" destination="form-emergency" id="outlet-form-emergency"/>
+                        <outlet property="firstNameField" destination="form-first-name" id="outlet-form-first"/>
+                        <outlet property="lastNameField" destination="form-last-name" id="outlet-form-last"/>
+                        <outlet property="notesView" destination="form-notes" id="outlet-form-notes"/>
+                        <outlet property="phoneField" destination="form-phone" id="outlet-form-phone"/>
+                        <outlet property="photoButton" destination="form-photo-button" id="outlet-form-photo-button"/>
+                        <outlet property="photoView" destination="form-photo" id="outlet-form-photo"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-form" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2140" y="-280"/>
+        </scene>
+
+        <!--Buscador de países-->
+        <scene sceneID="scene-country-search">
+            <objects>
+                <tableViewController storyboardIdentifier="countrySearch" id="country-vc" customClass="CountrySearchViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="insetGrouped" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="country-table">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <connections>
+                            <outlet property="dataSource" destination="country-vc" id="country-data-source"/>
+                            <outlet property="delegate" destination="country-vc" id="country-delegate"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" title="Buscar país" id="country-nav-item"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-country" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2940" y="-280"/>
+        </scene>
+
+        <!--Navegación Servicios-->
+        <scene sceneID="scene-nav-services">
+            <objects>
+                <navigationController storyboardIdentifier="servicesNavigation" id="nav-services" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="bar-services"/>
+                    <connections>
+                        <segue destination="services-vc" kind="relationship" relationship="rootViewController" id="root-services"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-nav-services" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="540" y="360"/>
+        </scene>
+
+        <!--Servicios-->
+        <scene sceneID="scene-services">
+            <objects>
+                <viewController id="services-vc" customClass="FirebaseSyncViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="services-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="18" translatesAutoresizingMaskIntoConstraints="NO" id="services-stack">
+                                <rect key="frame" x="36" y="307" width="321" height="238"/>
+                                <subviews>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="icloud.and.arrow.up.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="services-icon">
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="72" id="services-icon-height"/>
+                                        </constraints>
+                                        <color key="tintColor" systemColor="systemBlueColor"/>
+                                    </imageView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Respaldo en Firebase" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="services-status">
+                                        <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Sincroniza los perfiles locales con Cloud Firestore." textAlignment="center" numberOfLines="0" translatesAutoresizingMaskIntoConstraints="NO" id="services-detail">
+                                        <color key="textColor" systemColor="secondaryLabelColor"/>
+                                    </label>
+                                    <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="services-indicator"/>
+                                    <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="services-button">
+                                        <state key="normal" title="Sincronizar ahora"/>
+                                        <connections>
+                                            <action selector="syncTapped:" destination="services-vc" eventType="touchUpInside" id="action-sync"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="services-safe"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="services-stack" firstAttribute="centerX" secondItem="services-view" secondAttribute="centerX" id="services-center-x"/>
+                            <constraint firstItem="services-stack" firstAttribute="centerY" secondItem="services-safe" secondAttribute="centerY" id="services-center-y"/>
+                            <constraint firstItem="services-stack" firstAttribute="leading" secondItem="services-safe" secondAttribute="leading" constant="36" id="services-left"/>
+                            <constraint firstItem="services-safe" firstAttribute="trailing" secondItem="services-stack" secondAttribute="trailing" constant="36" id="services-right"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Servicios" id="services-nav-item"/>
+                    <connections>
+                        <outlet property="detailLabel" destination="services-detail" id="outlet-services-detail"/>
+                        <outlet property="indicator" destination="services-indicator" id="outlet-services-indicator"/>
+                        <outlet property="statusLabel" destination="services-status" id="outlet-services-status"/>
+                        <outlet property="syncButton" destination="services-button" id="outlet-services-button"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-services" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1320" y="360"/>
+        </scene>
+
+        <!--Navegación Cuenta-->
+        <scene sceneID="scene-nav-account">
+            <objects>
+                <navigationController storyboardIdentifier="accountNavigation" id="nav-account" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="bar-account"/>
+                    <connections>
+                        <segue destination="account-vc" kind="relationship" relationship="rootViewController" id="root-account"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-nav-account" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="540" y="1000"/>
+        </scene>
+
+        <!--Cuenta-->
+        <scene sceneID="scene-account">
+            <objects>
+                <viewController id="account-vc" customClass="AccountViewController" customModule="Proyecto_Billy" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="account-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="account-scroll">
+                                <subviews>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="account-stack">
+                                        <subviews>
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="person.badge.key.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-icon">
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="64" id="account-icon-height"/>
+                                                </constraints>
+                                                <color key="tintColor" systemColor="systemBlueColor"/>
+                                            </imageView>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Comprobando sesión..." textAlignment="center" numberOfLines="0" translatesAutoresizingMaskIntoConstraints="NO" id="account-status">
+                                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                                            </label>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Correo electrónico" keyboardType="emailAddress" textContentType="emailAddress" autocapitalizationType="none" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="account-email"/>
+                                            <textField opaque="NO" contentMode="scaleToFill" borderStyle="roundedRect" placeholder="Contraseña (mínimo 6 caracteres)" textContentType="password" secureTextEntry="YES" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="account-password"/>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-register">
+                                                <state key="normal" title="Crear o vincular cuenta"/>
+                                                <connections>
+                                                    <action selector="registerTapped:" destination="account-vc" eventType="touchUpInside" id="action-register"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-sign-in">
+                                                <state key="normal" title="Iniciar sesión"/>
+                                                <connections>
+                                                    <action selector="signInTapped:" destination="account-vc" eventType="touchUpInside" id="action-sign-in"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-sign-out">
+                                                <state key="normal" title="Cerrar sesión"/>
+                                                <connections>
+                                                    <action selector="signOutTapped:" destination="account-vc" eventType="touchUpInside" id="action-sign-out"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-delete">
+                                                <color key="tintColor" systemColor="systemRedColor"/>
+                                                <state key="normal" title="Eliminar cuenta y respaldo"/>
+                                                <connections>
+                                                    <action selector="deleteAccountTapped:" destination="account-vc" eventType="touchUpInside" id="action-delete-account"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="account-delete-local">
+                                                <color key="tintColor" systemColor="systemOrangeColor"/>
+                                                <state key="normal" title="Eliminar datos de este dispositivo"/>
+                                                <connections>
+                                                    <action selector="deleteLocalTapped:" destination="account-vc" eventType="touchUpInside" id="action-delete-local"/>
+                                                </connections>
+                                            </button>
+                                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="account-indicator"/>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <viewLayoutGuide key="contentLayoutGuide" id="account-content-guide"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="account-frame-guide"/>
+                                <constraints>
+                                    <constraint firstItem="account-stack" firstAttribute="top" secondItem="account-content-guide" secondAttribute="top" constant="24" id="account-stack-top"/>
+                                    <constraint firstItem="account-stack" firstAttribute="leading" secondItem="account-content-guide" secondAttribute="leading" constant="28" id="account-stack-left"/>
+                                    <constraint firstItem="account-content-guide" firstAttribute="trailing" secondItem="account-stack" secondAttribute="trailing" constant="28" id="account-stack-right"/>
+                                    <constraint firstItem="account-content-guide" firstAttribute="bottom" secondItem="account-stack" secondAttribute="bottom" constant="24" id="account-stack-bottom"/>
+                                    <constraint firstItem="account-stack" firstAttribute="width" secondItem="account-frame-guide" secondAttribute="width" constant="-56" id="account-stack-width"/>
+                                </constraints>
+                            </scrollView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="account-safe"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="account-scroll" firstAttribute="top" secondItem="account-view" secondAttribute="top" id="account-scroll-top"/>
+                            <constraint firstItem="account-scroll" firstAttribute="leading" secondItem="account-view" secondAttribute="leading" id="account-scroll-left"/>
+                            <constraint firstAttribute="trailing" secondItem="account-scroll" secondAttribute="trailing" id="account-scroll-right"/>
+                            <constraint firstAttribute="bottom" secondItem="account-scroll" secondAttribute="bottom" id="account-scroll-bottom"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Cuenta" id="account-nav-item"/>
+                    <connections>
+                        <outlet property="deleteButton" destination="account-delete" id="outlet-account-delete"/>
+                        <outlet property="deleteLocalButton" destination="account-delete-local" id="outlet-account-delete-local"/>
+                        <outlet property="emailField" destination="account-email" id="outlet-account-email"/>
+                        <outlet property="indicator" destination="account-indicator" id="outlet-account-indicator"/>
+                        <outlet property="passwordField" destination="account-password" id="outlet-account-password"/>
+                        <outlet property="registerButton" destination="account-register" id="outlet-account-register"/>
+                        <outlet property="signInButton" destination="account-sign-in" id="outlet-account-sign-in"/>
+                        <outlet property="signOutButton" destination="account-sign-out" id="outlet-account-sign-out"/>
+                        <outlet property="statusLabel" destination="account-status" id="outlet-account-status"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="first-account" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1320" y="1000"/>
         </scene>
     </scenes>
     <resources>
+        <image name="icloud.and.arrow.up.fill" catalog="system" width="128" height="105"/>
+        <image name="lock.shield.fill" catalog="system" width="128" height="125"/>
+        <image name="person.badge.key.fill" catalog="system" width="128" height="102"/>
+        <image name="person.crop.circle.fill" catalog="system" width="128" height="123"/>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.2352941176" green="0.2352941176" blue="0.262745098" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="secondarySystemGroupedBackgroundColor">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemBlueColor">
+            <color red="0.0" green="0.4784313725" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGroupedBackgroundColor">
+            <color red="0.9490196078" green="0.9490196078" blue="0.968627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemOrangeColor">
+            <color red="1" green="0.5843137255" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.231372549" blue="0.1882352941" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>
