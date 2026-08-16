@@ -18,6 +18,12 @@ final class PersonalProfileFormViewController: UIViewController {
     private var selectedCountry: Country?
     private var selectedPhoto: UIImage?
 
+    private lazy var documentErrorLabel = makeValidationLabel()
+    private lazy var phoneErrorLabel = makeValidationLabel()
+    private lazy var emailErrorLabel = makeValidationLabel()
+    private lazy var birthDateErrorLabel = makeValidationLabel()
+    private lazy var emergencyErrorLabel = makeValidationLabel()
+
     private let dniLength = 8
     private let phoneLength = 9
 
@@ -32,6 +38,8 @@ final class PersonalProfileFormViewController: UIViewController {
         navigationItem.largeTitleDisplayMode = .never
         configureControls()
         populateIfNeeded()
+        configureLiveValidation()
+        refreshValidation(showErrors: false)
     }
 
     private func configureControls() {
@@ -52,7 +60,7 @@ final class PersonalProfileFormViewController: UIViewController {
         emergencyField.keyboardType = .numberPad
         phoneField.placeholder = "Teléfono *"
         emergencyField.placeholder = "Contacto de emergencia *"
-        birthDatePicker.maximumDate = latestAdultBirthDate
+        birthDatePicker.maximumDate = Date()
         if profile == nil {
             birthDatePicker.date = latestAdultBirthDate
         }
@@ -89,38 +97,27 @@ final class PersonalProfileFormViewController: UIViewController {
         addressField.text = profile.address
         emergencyField.text = profile.emergencyContact
         notesView.text = profile.notes
-        birthDatePicker.date = min(profile.birthDate ?? latestAdultBirthDate, latestAdultBirthDate)
+        birthDatePicker.date = profile.birthDate ?? latestAdultBirthDate
         if let name = profile.countryName, !name.isEmpty {
             countryButton.setTitle(name, for: .normal)
         }
     }
 
     private func save() {
-        guard let firstName = required(firstNameField) else { return showValidation("Ingresa los nombres.", focus: firstNameField) }
-        guard let lastName = required(lastNameField) else { return showValidation("Ingresa los apellidos.", focus: lastNameField) }
-        guard let document = required(documentField) else { return showValidation("Ingresa el documento.", focus: documentField) }
-        guard document.count == dniLength, document.allSatisfy(\.isNumber) else {
-            return showValidation("El DNI debe contener exactamente 8 dígitos.", focus: documentField)
+        guard refreshValidation(showErrors: true) else {
+            focusFirstInvalidField()
+            return
         }
-        guard let phoneText = required(phoneField) else {
-            return showValidation("Ingresa el número de teléfono.", focus: phoneField)
-        }
+
+        guard let firstName = required(firstNameField),
+              let lastName = required(lastNameField),
+              let document = required(documentField),
+              let phoneText = required(phoneField),
+              let emergencyText = required(emergencyField) else { return }
+
         let phone = normalizedPhone(phoneText)
-        guard phone.count == phoneLength, phone.allSatisfy(\.isNumber) else {
-            return showValidation("El teléfono debe contener exactamente 9 dígitos.", focus: phoneField)
-        }
-        guard let emergencyText = required(emergencyField) else {
-            return showValidation("Ingresa el contacto de emergencia.", focus: emergencyField)
-        }
         let emergencyPhone = normalizedPhone(emergencyText)
-        guard emergencyPhone.count == phoneLength, emergencyPhone.allSatisfy(\.isNumber) else {
-            return showValidation("El contacto de emergencia debe contener exactamente 9 dígitos.", focus: emergencyField)
-        }
-        guard isAdult(birthDatePicker.date) else {
-            return showValidation("La persona debe tener 18 años o más.", focus: birthDatePicker)
-        }
         let email = emailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard email.isEmpty || isValidEmail(email) else { return showValidation("Ingresa un correo válido.", focus: emailField) }
 
         let input = PersonalProfileInput(
             firstName: firstName, lastName: lastName, documentNumber: document,
@@ -142,6 +139,10 @@ final class PersonalProfileFormViewController: UIViewController {
                 try ProfilePhotoStore.shared.save(selectedPhoto, for: profileID)
             }
             navigationController?.popViewController(animated: true)
+        } catch PersonalProfileRepositoryError.duplicateDocumentNumber {
+            showError("Ya existe un perfil registrado con este DNI.", in: documentErrorLabel)
+            navigationItem.rightBarButtonItem?.isEnabled = false
+            documentField.becomeFirstResponder()
         } catch {
             showError(error, title: "No se pudo guardar el perfil")
         }
@@ -166,6 +167,167 @@ final class PersonalProfileFormViewController: UIViewController {
 
     private func normalizedPhone(_ text: String?) -> String {
         text?.filter(\.isNumber) ?? ""
+    }
+
+    private func makeValidationLabel() -> UILabel {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .caption1)
+        label.textColor = .systemRed
+        label.numberOfLines = 0
+        label.adjustsFontForContentSizeCategory = true
+        label.isHidden = true
+        label.accessibilityTraits = .staticText
+        return label
+    }
+
+    private func configureLiveValidation() {
+        group(documentField, with: documentErrorLabel)
+        group(phoneField, with: phoneErrorLabel)
+        group(emailField, with: emailErrorLabel)
+        group(birthDatePicker, with: birthDateErrorLabel)
+        group(emergencyField, with: emergencyErrorLabel)
+
+        [firstNameField, lastNameField, documentField, phoneField, emailField, emergencyField].forEach {
+            $0?.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        }
+        birthDatePicker.addTarget(self, action: #selector(birthDateDidChange), for: .valueChanged)
+    }
+
+    private func group(_ control: UIView, with errorLabel: UILabel) {
+        guard let parentStack = control.superview as? UIStackView,
+              let index = parentStack.arrangedSubviews.firstIndex(of: control) else { return }
+
+        parentStack.removeArrangedSubview(control)
+        control.removeFromSuperview()
+        let fieldStack = UIStackView(arrangedSubviews: [control, errorLabel])
+        fieldStack.axis = .vertical
+        fieldStack.spacing = 4
+        parentStack.insertArrangedSubview(fieldStack, at: index)
+    }
+
+    @objc private func textFieldDidChange(_ textField: UITextField) {
+        refreshValidation(showErrors: true, changedField: textField)
+    }
+
+    @objc private func birthDateDidChange() {
+        refreshValidation(showErrors: true, changedField: nil, birthDateChanged: true)
+    }
+
+    @discardableResult
+    private func refreshValidation(
+        showErrors: Bool,
+        changedField: UITextField? = nil,
+        birthDateChanged: Bool = false
+    ) -> Bool {
+        let documentMessage = documentValidationMessage()
+        let phoneMessage = phoneValidationMessage(phoneField.text)
+        let emailMessage = emailValidationMessage()
+        let birthDateMessage = isAdult(birthDatePicker.date) ? nil : "La persona debe ser mayor de edad."
+        let emergencyMessage = phoneValidationMessage(emergencyField.text)
+        let showAllErrors = showErrors && changedField == nil && !birthDateChanged
+
+        update(
+            documentErrorLabel,
+            message: documentMessage,
+            visible: showErrors && (changedField === documentField || showAllErrors)
+        )
+        update(
+            phoneErrorLabel,
+            message: phoneMessage,
+            visible: showErrors && (changedField === phoneField || showAllErrors)
+        )
+        update(
+            emailErrorLabel,
+            message: emailMessage,
+            visible: showErrors && (changedField === emailField || showAllErrors)
+        )
+        update(
+            birthDateErrorLabel,
+            message: birthDateMessage,
+            visible: showErrors && (birthDateChanged || showAllErrors)
+        )
+        update(
+            emergencyErrorLabel,
+            message: emergencyMessage,
+            visible: showErrors && (changedField === emergencyField || showAllErrors)
+        )
+
+        let isValid = required(firstNameField) != nil
+            && required(lastNameField) != nil
+            && documentMessage == nil
+            && phoneMessage == nil
+            && emailMessage == nil
+            && birthDateMessage == nil
+            && emergencyMessage == nil
+        navigationItem.rightBarButtonItem?.isEnabled = isValid
+        return isValid
+    }
+
+    private func documentValidationMessage() -> String? {
+        guard let document = required(documentField),
+              document.count == dniLength,
+              document.allSatisfy(\.isNumber) else {
+            return "Debe contener 8 dígitos."
+        }
+        do {
+            let isAvailable = try PersonalProfileRepository.shared.isDocumentNumberAvailable(
+                document,
+                excluding: profile
+            )
+            return isAvailable ? nil : "Ya existe un perfil registrado con este DNI."
+        } catch {
+            return "No se pudo validar el DNI. Inténtalo nuevamente."
+        }
+    }
+
+    private func phoneValidationMessage(_ text: String?) -> String? {
+        let number = normalizedPhone(text)
+        return number.count == phoneLength && number.allSatisfy(\.isNumber)
+            ? nil
+            : "Debe contener 9 dígitos."
+    }
+
+    private func emailValidationMessage() -> String? {
+        let email = emailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return email.isEmpty || isValidEmail(email) ? nil : "Correo electrónico no válido."
+    }
+
+    private func update(_ label: UILabel, message: String?, visible: Bool) {
+        guard visible else { return }
+        label.text = message
+        label.isHidden = message == nil
+    }
+
+    private func showError(_ message: String, in label: UILabel) {
+        label.text = message
+        label.isHidden = false
+        UIAccessibility.post(notification: .announcement, argument: message)
+    }
+
+    private func focusFirstInvalidField() {
+        if required(firstNameField) == nil {
+            firstNameField.becomeFirstResponder()
+            return
+        }
+        if required(lastNameField) == nil {
+            lastNameField.becomeFirstResponder()
+            return
+        }
+        if documentValidationMessage() != nil {
+            documentField.becomeFirstResponder()
+            return
+        }
+        if phoneValidationMessage(phoneField.text) != nil {
+            phoneField.becomeFirstResponder()
+            return
+        }
+        if emailValidationMessage() != nil {
+            emailField.becomeFirstResponder()
+            return
+        }
+        if phoneValidationMessage(emergencyField.text) != nil {
+            emergencyField.becomeFirstResponder()
+        }
     }
 
     private func isAdult(_ birthDate: Date) -> Bool {
@@ -198,11 +360,6 @@ final class PersonalProfileFormViewController: UIViewController {
         navigationController?.pushViewController(controller, animated: true)
     }
 
-    private func showValidation(_ message: String, focus: UIView) {
-        let alert = UIAlertController(title: "Revisa los datos", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Corregir", style: .default) { _ in focus.becomeFirstResponder() })
-        present(alert, animated: true)
-    }
 }
 
 extension PersonalProfileFormViewController: UITextFieldDelegate {

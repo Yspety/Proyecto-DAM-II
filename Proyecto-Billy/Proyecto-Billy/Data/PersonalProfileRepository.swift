@@ -15,6 +15,17 @@ struct PersonalProfileInput {
     let countryName: String?
 }
 
+enum PersonalProfileRepositoryError: LocalizedError {
+    case duplicateDocumentNumber
+
+    var errorDescription: String? {
+        switch self {
+        case .duplicateDocumentNumber:
+            return "Ya existe un perfil registrado con este DNI."
+        }
+    }
+}
+
 @MainActor
 final class PersonalProfileRepository {
     static let shared = PersonalProfileRepository()
@@ -49,6 +60,23 @@ final class PersonalProfileRepository {
         return try viewContext.fetch(request)
     }
 
+    func isDocumentNumberAvailable(
+        _ documentNumber: String,
+        excluding profile: PersonalProfile? = nil
+    ) throws -> Bool {
+        let normalizedDocument = documentNumber.trimmed
+        guard !normalizedDocument.isEmpty else { return false }
+
+        let request = PersonalProfile.fetchRequest()
+        request.fetchLimit = 2
+        request.predicate = NSPredicate(format: "documentNumber == %@", normalizedDocument)
+        let matches = try viewContext.fetch(request)
+        return !matches.contains { candidate in
+            guard let profile else { return true }
+            return candidate.objectID != profile.objectID
+        }
+    }
+
     func merge(_ cloudProfiles: [CloudProfile]) throws {
         for cloud in cloudProfiles {
             let request = PersonalProfile.fetchRequest()
@@ -76,6 +104,7 @@ final class PersonalProfileRepository {
 
     @discardableResult
     func create(_ input: PersonalProfileInput) throws -> PersonalProfile {
+        try ensureUniqueDocumentNumber(input.documentNumber)
         let profile = PersonalProfile(context: viewContext)
         profile.id = UUID()
         profile.createdAt = Date()
@@ -85,6 +114,7 @@ final class PersonalProfileRepository {
     }
 
     func update(_ profile: PersonalProfile, with input: PersonalProfileInput) throws {
+        try ensureUniqueDocumentNumber(input.documentNumber, excluding: profile)
         apply(input, to: profile)
         try save()
     }
@@ -98,6 +128,15 @@ final class PersonalProfileRepository {
         let profiles = try fetchAll()
         profiles.forEach { viewContext.delete($0) }
         try save()
+    }
+
+    private func ensureUniqueDocumentNumber(
+        _ documentNumber: String,
+        excluding profile: PersonalProfile? = nil
+    ) throws {
+        guard try isDocumentNumberAvailable(documentNumber, excluding: profile) else {
+            throw PersonalProfileRepositoryError.duplicateDocumentNumber
+        }
     }
 
     private func apply(_ input: PersonalProfileInput, to profile: PersonalProfile) {
