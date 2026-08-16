@@ -142,7 +142,8 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
         content.imageProperties.cornerRadius = 22
         content.imageProperties.tintColor = AppStyle.accent
         cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
+        cell.accessoryType = .none
+        cell.accessoryView = makeProfileActionsButton(for: profile)
         return cell
     }
 
@@ -151,24 +152,109 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
         showForm(profile: resultsController.object(at: indexPath))
     }
 
+    private func makeProfileActionsButton(for profile: PersonalProfile) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "ellipsis.circle"), for: .normal)
+        button.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
+        button.accessibilityLabel = "Acciones para \(profile.fullName.isEmpty ? "el perfil" : profile.fullName)"
+
+        let editAction = UIAction(title: "Editar", image: UIImage(systemName: "pencil")) { [weak self] _ in
+            self?.showForm(profile: profile)
+        }
+        let shareAction = UIAction(title: "Compartir", image: UIImage(systemName: "square.and.arrow.up")) { [weak self, weak button] _ in
+            guard let self, let button else { return }
+            share(profile, from: button)
+        }
+        let deleteAction = UIAction(
+            title: "Eliminar",
+            image: UIImage(systemName: "trash"),
+            attributes: .destructive
+        ) { [weak self] _ in
+            self?.confirmDeletion(of: profile)
+        }
+        button.menu = UIMenu(children: [editAction, shareAction, deleteAction])
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }
+
+    private func share(_ profile: PersonalProfile, from sourceView: UIView) {
+        var items: [Any] = [profile.shareText]
+        if let photo = ProfilePhotoStore.shared.image(for: profile.id) {
+            items.append(photo)
+        }
+        let activity = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        activity.popoverPresentationController?.sourceView = sourceView
+        present(activity, animated: true)
+    }
+
+    private func confirmDeletion(
+        of profile: PersonalProfile,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        let profileName = profile.fullName.isEmpty ? "este perfil" : profile.fullName
+        let alert = UIAlertController(
+            title: "Eliminar perfil",
+            message: "¿Seguro que deseas eliminar a \(profileName)? Se borrará del dispositivo y del respaldo de Firebase. Esta acción no se puede deshacer.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel) { _ in
+            completion?(false)
+        })
+        alert.addAction(UIAlertAction(title: "Eliminar", style: .destructive) { [weak self] _ in
+            guard let self else {
+                completion?(false)
+                return
+            }
+            deleteProfileFromDeviceAndFirebase(profile, completion: completion)
+        })
+        present(alert, animated: true)
+    }
+
+    private func deleteProfileFromDeviceAndFirebase(
+        _ profile: PersonalProfile,
+        completion: ((Bool) -> Void)?
+    ) {
+        let profileID = profile.id
+        Task { [weak self] in
+            guard let self else {
+                completion?(false)
+                return
+            }
+
+            if let profileID {
+                do {
+                    try await FirebaseProfileService.shared.deleteProfile(id: profileID)
+                } catch {
+                    showError(error, title: "No se pudo eliminar de Firebase")
+                    completion?(false)
+                    return
+                }
+            }
+
+            do {
+                try PersonalProfileRepository.shared.delete(profile)
+                ProfilePhotoStore.shared.delete(for: profileID)
+                completion?(true)
+            } catch {
+                showError(error, title: "No se pudo eliminar del dispositivo")
+                completion?(false)
+            }
+        }
+    }
+
     override func tableView(
         _ tableView: UITableView,
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
         let action = UIContextualAction(style: .destructive, title: "Eliminar") { [weak self] _, _, completion in
             guard let self else { return completion(false) }
-            do {
-                let profile = resultsController.object(at: indexPath)
-                ProfilePhotoStore.shared.delete(for: profile.id)
-                try PersonalProfileRepository.shared.delete(profile)
-                completion(true)
-            } catch {
-                showError(error, title: "No se pudo eliminar")
-                completion(false)
-            }
+            let profile = resultsController.object(at: indexPath)
+            confirmDeletion(of: profile, completion: completion)
         }
         action.image = UIImage(systemName: "trash")
-        return UISwipeActionsConfiguration(actions: [action])
+        let configuration = UISwipeActionsConfiguration(actions: [action])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
     }
 
     override func tableView(
@@ -178,11 +264,7 @@ final class PersonalProfileListViewController: UITableViewController, UISearchRe
         let action = UIContextualAction(style: .normal, title: "Compartir") { [weak self] _, sourceView, completion in
             guard let self else { return completion(false) }
             let profile = resultsController.object(at: indexPath)
-            var items: [Any] = [profile.shareText]
-            if let photo = ProfilePhotoStore.shared.image(for: profile.id) { items.append(photo) }
-            let activity = UIActivityViewController(activityItems: items, applicationActivities: nil)
-            activity.popoverPresentationController?.sourceView = sourceView
-            present(activity, animated: true)
+            share(profile, from: sourceView)
             completion(true)
         }
         action.backgroundColor = AppStyle.accent

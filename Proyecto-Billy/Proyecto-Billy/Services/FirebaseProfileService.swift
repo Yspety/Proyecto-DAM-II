@@ -71,9 +71,15 @@ nonisolated struct CloudProfile: Sendable {
 
 nonisolated enum FirebaseSyncError: LocalizedError {
     case notConfigured
+    case noActiveSession
 
     var errorDescription: String? {
-        "Firebase aún no está configurado. Añade GoogleService-Info.plist al target de la aplicación."
+        switch self {
+        case .notConfigured:
+            return "Firebase aún no está configurado. Añade GoogleService-Info.plist al target de la aplicación."
+        case .noActiveSession:
+            return "Inicia sesión antes de eliminar un perfil sincronizado."
+        }
     }
 }
 
@@ -98,6 +104,19 @@ actor FirebaseProfileService {
 
         let snapshot = try await collection.getDocuments()
         return snapshot.documents.compactMap { CloudProfile(id: $0.documentID, data: $0.data()) }
+    }
+
+    func deleteProfile(id: UUID) async throws {
+        try requireConfiguration()
+        guard let userID = Auth.auth().currentUser?.uid else {
+            throw FirebaseSyncError.noActiveSession
+        }
+        try await Firestore.firestore()
+            .collection("users")
+            .document(userID)
+            .collection("profiles")
+            .document(id.uuidString)
+            .delete()
     }
 
     func currentSession(createAnonymousIfNeeded: Bool = false) async throws -> AccountSession? {
