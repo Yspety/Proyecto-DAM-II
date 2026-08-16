@@ -18,6 +18,13 @@ final class PersonalProfileFormViewController: UIViewController {
     private var selectedCountry: Country?
     private var selectedPhoto: UIImage?
 
+    private let dniLength = 8
+    private let phoneLength = 9
+
+    private var latestAdultBirthDate: Date {
+        Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = profile == nil ? "Nuevo perfil" : "Editar perfil"
@@ -37,7 +44,18 @@ final class PersonalProfileFormViewController: UIViewController {
         photoView.layer.borderColor = AppStyle.accent.cgColor
         photoButton.menu = makePhotoMenu()
         photoButton.showsMenuAsPrimaryAction = true
-        birthDatePicker.maximumDate = Date()
+        documentField.delegate = self
+        phoneField.delegate = self
+        emergencyField.delegate = self
+        documentField.keyboardType = .numberPad
+        phoneField.keyboardType = .numberPad
+        emergencyField.keyboardType = .numberPad
+        phoneField.placeholder = "Teléfono *"
+        emergencyField.placeholder = "Contacto de emergencia *"
+        birthDatePicker.maximumDate = latestAdultBirthDate
+        if profile == nil {
+            birthDatePicker.date = latestAdultBirthDate
+        }
         notesView.layer.cornerRadius = 10
         notesView.layer.borderWidth = 1
         notesView.layer.borderColor = UIColor.separator.cgColor
@@ -71,7 +89,7 @@ final class PersonalProfileFormViewController: UIViewController {
         addressField.text = profile.address
         emergencyField.text = profile.emergencyContact
         notesView.text = profile.notes
-        birthDatePicker.date = profile.birthDate ?? Date()
+        birthDatePicker.date = min(profile.birthDate ?? latestAdultBirthDate, latestAdultBirthDate)
         if let name = profile.countryName, !name.isEmpty {
             countryButton.setTitle(name, for: .normal)
         }
@@ -81,16 +99,25 @@ final class PersonalProfileFormViewController: UIViewController {
         guard let firstName = required(firstNameField) else { return showValidation("Ingresa los nombres.", focus: firstNameField) }
         guard let lastName = required(lastNameField) else { return showValidation("Ingresa los apellidos.", focus: lastNameField) }
         guard let document = required(documentField) else { return showValidation("Ingresa el documento.", focus: documentField) }
-        guard document.count == 8, document.allSatisfy(\.isNumber) else {
+        guard document.count == dniLength, document.allSatisfy(\.isNumber) else {
             return showValidation("El DNI debe contener exactamente 8 dígitos.", focus: documentField)
         }
-        let phone = normalizedPhone(phoneField.text)
-        guard phone.isEmpty || (7...15).contains(phone.filter(\.isNumber).count) else {
-            return showValidation("El teléfono debe contener entre 7 y 15 dígitos.", focus: phoneField)
+        guard let phoneText = required(phoneField) else {
+            return showValidation("Ingresa el número de teléfono.", focus: phoneField)
         }
-        let emergencyPhone = normalizedPhone(emergencyField.text)
-        guard emergencyPhone.isEmpty || (7...15).contains(emergencyPhone.filter(\.isNumber).count) else {
-            return showValidation("El contacto de emergencia debe contener entre 7 y 15 dígitos.", focus: emergencyField)
+        let phone = normalizedPhone(phoneText)
+        guard phone.count == phoneLength, phone.allSatisfy(\.isNumber) else {
+            return showValidation("El teléfono debe contener exactamente 9 dígitos.", focus: phoneField)
+        }
+        guard let emergencyText = required(emergencyField) else {
+            return showValidation("Ingresa el contacto de emergencia.", focus: emergencyField)
+        }
+        let emergencyPhone = normalizedPhone(emergencyText)
+        guard emergencyPhone.count == phoneLength, emergencyPhone.allSatisfy(\.isNumber) else {
+            return showValidation("El contacto de emergencia debe contener exactamente 9 dígitos.", focus: emergencyField)
+        }
+        guard isAdult(birthDatePicker.date) else {
+            return showValidation("La persona debe tener 18 años o más.", focus: birthDatePicker)
         }
         let email = emailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard email.isEmpty || isValidEmail(email) else { return showValidation("Ingresa un correo válido.", focus: emailField) }
@@ -138,9 +165,17 @@ final class PersonalProfileFormViewController: UIViewController {
     }
 
     private func normalizedPhone(_ text: String?) -> String {
-        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let prefix = value.hasPrefix("+") ? "+" : ""
-        return prefix + value.filter(\.isNumber)
+        text?.filter(\.isNumber) ?? ""
+    }
+
+    private func isAdult(_ birthDate: Date) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let normalizedBirthDate = calendar.startOfDay(for: birthDate)
+        guard let eighteenthBirthday = calendar.date(byAdding: .year, value: 18, to: normalizedBirthDate) else {
+            return false
+        }
+        return eighteenthBirthday <= today
     }
 
     private func isValidEmail(_ email: String) -> Bool {
@@ -167,6 +202,26 @@ final class PersonalProfileFormViewController: UIViewController {
         let alert = UIAlertController(title: "Revisa los datos", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Corregir", style: .default) { _ in focus.becomeFirstResponder() })
         present(alert, animated: true)
+    }
+}
+
+extension PersonalProfileFormViewController: UITextFieldDelegate {
+    func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
+        guard textField === documentField || textField === phoneField || textField === emergencyField else {
+            return true
+        }
+        guard string.allSatisfy(\.isNumber) else { return false }
+        guard let currentText = textField.text,
+              let swiftRange = Range(range, in: currentText) else {
+            return false
+        }
+        let updatedText = currentText.replacingCharacters(in: swiftRange, with: string)
+        let maximumLength = textField === documentField ? dniLength : phoneLength
+        return updatedText.count <= maximumLength
     }
 }
 
