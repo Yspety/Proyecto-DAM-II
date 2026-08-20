@@ -166,8 +166,17 @@ actor FirebaseProfileService {
     }
 
     private func authenticatedUserID() async throws -> String {
-        if let user = Auth.auth().currentUser { return user.uid }
-        return try await Auth.auth().signInAnonymously().user.uid
+        let user: User
+        if let currentUser = Auth.auth().currentUser {
+            user = currentUser
+        } else {
+            user = try await Auth.auth().signInAnonymously().user
+        }
+
+        // Fuerza la renovación antes de consultar Firestore. Esto evita que una
+        // sesión restaurada con un token vencido sea rechazada por las reglas.
+        _ = try await user.getIDToken(forcingRefresh: true)
+        return user.uid
     }
 
     private func requireConfiguration() throws {
